@@ -82,10 +82,7 @@ const totalItems = cart.reduce(
     const result = await getArticleByCode(code);
 
     if (!result) {
-      notify.error("Artículo no encontrado.");
-
       setScannerKey((k) => k + 1);
-
       return;
     }
 

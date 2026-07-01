@@ -141,3 +141,32 @@
 .animation-delay-600 {
   animation-delay: .6s;
 }
+
+@media print {
+
+  body * {
+    visibility: hidden;
+  }
+
+  .print-content,
+  .print-content * {
+    visibility: visible;
+  }
+
+  .print-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 40px;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+}

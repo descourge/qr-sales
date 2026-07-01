@@ -27,11 +27,8 @@ export default function QRCodeModal({
             {description}
             </h3>
 
-            <div className="my-6">
+            <div className="my-6 print-content">
             <ArticleQRCode code={code} />
-            <p className="mt-2 text-sm text-gray-600">
-            Escanee este código para registrar la venta.
-            </p>
             </div>
             
 

@@ -5,13 +5,7 @@ import { useEffect, useState } from "react";
 import ArticleForm from "./ArticleForm";
 import ArticleTable from "./ArticleTable";
 
-export interface Article {
-  id: number;
-  code: string;
-  description: string;
-  category: string;
-  unitPrice: string;
-}
+import { Article } from "@/shared/types/article";
 
 export default function ArticleManager() {
   const [articles, setArticles] = useState<Article[]>([]);

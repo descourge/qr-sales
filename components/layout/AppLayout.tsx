@@ -1,5 +1,6 @@
 import AppSidebar from "./AppSidebar";
 import AppHeader from "./AppHeader";
+import AutoSync from "@/shared/components/AutoSync";
 
 export default function AppLayout({
   children,
@@ -14,6 +15,7 @@ export default function AppLayout({
       <div className="flex flex-1 flex-col">
 
         <AppHeader />
+        <AutoSync />
 
         <main className="flex-1 p-8">
 

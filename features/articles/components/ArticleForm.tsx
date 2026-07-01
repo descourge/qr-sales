@@ -1,6 +1,8 @@
 "use client";
 
+import { notify } from "@/shared/lib/notify";
 import { useState } from "react";
+import { toast } from "sonner";
 
 type Props = {
     onCreated: () => void;
@@ -43,11 +45,11 @@ export default function ArticleForm({
     });
 
     if (!response.ok) {
-      alert("Error al guardar.");
+      notify.error("Error al guardar.");
       return;
     }
 
-    alert("Artículo creado.");
+    notify.success("Artículo creado.");
 
     onCreated();
 

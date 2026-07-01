@@ -1,23 +1,20 @@
 "use client";
 
 import { useZxing } from "react-zxing";
-import { useState } from "react";
+import { useEffect, useRef } from "react";
 
 type Props = {
-
-    onDetected: (
-        code: string
-    ) => void;
-
+  onDetected: (code: string) => void;
+  resetKey: number;
 };
 
 export default function QRScanner({
 
     onDetected,
+    resetKey,
 
 }: Props) {
-
-    const [lastCode, setLastCode] = useState("");
+    const isLocked = useRef(false);
 
     const { ref } = useZxing({
         constraints: {
@@ -27,17 +24,21 @@ export default function QRScanner({
         },
 
         onDecodeResult(result) {
+            if (isLocked.current) return;
+
             const code = result.rawValue;
 
             if (!code) return;
 
-            if (code === lastCode) return;
-
-            setLastCode(code);
+            isLocked.current = true;
 
             onDetected(code);
             },
         });
+        
+    useEffect(() => {
+    isLocked.current = false;
+    }, [resetKey]);
 
     return (
         <div className="mx-auto w-full max-w-md rounded-xl border bg-white p-4 shadow">

@@ -4,6 +4,8 @@ import {
   ShoppingCart,
   RefreshCcw,
   Settings,
+  History,
+  Receipt,
 } from "lucide-react";
 
 import { NavigationItem } from "@/shared/types/navigation";
@@ -23,6 +25,11 @@ export const navigation: NavigationItem[] = [
     title: "Ventas",
     href: "/sales",
     icon: ShoppingCart,
+  },
+  {
+  title: "Historial de Ventas",
+  href: "/sales/history",
+  icon: Receipt,
   },
   {
     title: "Sincronización",

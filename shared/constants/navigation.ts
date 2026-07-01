@@ -36,9 +36,4 @@ export const navigation: NavigationItem[] = [
     href: "/sync",
     icon: RefreshCcw,
   },
-  {
-    title: "Configuración",
-    href: "/settings",
-    icon: Settings,
-  },
 ];

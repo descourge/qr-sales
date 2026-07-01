@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import QRScanner from "@/features/sales/components/QRScanner";
-import ArticleCard from "@/features/sales/components/ArticleCard";
+import DetectedArticleModal from "@/features/sales/components/DetectedArticleModal";
 import Cart from "@/features/sales/components/Cart";
 
 import { getArticleByCode } from "@/features/sales/services/article.service";
@@ -24,6 +24,12 @@ import { savePendingSale } from "@/shared/lib/offline-db";
 import {
   notifyPendingSalesChanged,
 } from "@/shared/lib/sync-events";
+
+import {
+  QrCode,
+  ShoppingCart,
+  Package,
+} from "lucide-react";
 
 
 export default function SalesPage() {
@@ -57,6 +63,16 @@ const [confirmData, setConfirmData] =
     description: string;
     onConfirm: () => void;
   } | null>(null);
+
+  const total = cart.reduce(
+  (sum, item) => sum + item.subtotal,
+  0
+);
+
+const totalItems = cart.reduce(
+  (sum, item) => sum + item.quantity,
+  0
+);
   
 
   async function handleDetected(code: string) {
@@ -121,10 +137,11 @@ const [confirmData, setConfirmData] =
     });
 
     setArticle(null);
-    setQuantity("1");
+setQuantity("1");
 
-    // Reactiva el escáner
-    setScannerKey((k) => k + 1);
+setTimeout(() => {
+  setScannerKey((k) => k + 1);
+}, 150);
   }
 
   function handleIncrease(articleId: number) {
@@ -223,11 +240,6 @@ async function getCurrentLocation() {
 function handleFinishSale() {
   if (cart.length === 0) return;
 
-  const total = cart.reduce(
-    (sum, item) => sum + item.subtotal,
-    0
-  );
-
   setConfirmData({
     title: "Registrar venta",
     description: `¿Desea registrar la venta por $${total.toLocaleString("es-CL")}?`,
@@ -242,11 +254,6 @@ async function confirmFinishSale() {
     notify.warning("El carrito está vacío.");
     return;
   }
-
-  const total = cart.reduce(
-    (sum, item) => sum + item.subtotal,
-    0
-  );
 
   try {
     const location = await getCurrentLocation();
@@ -334,63 +341,130 @@ function handleClear() {
   setConfirmOpen(true);
 }
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">
+return (
+  <div className="space-y-8">
+
+    {/* Encabezado */}
+
+    <div className="space-y-1">
+
+      <h1 className="text-4xl font-bold text-[#333333]">
         Nueva Venta
       </h1>
 
-      <QRScanner
-        onDetected={handleDetected}
-        resetKey={scannerKey}
-      />
+      <p className="text-slate-500">
+        Escanee productos y registre una venta.
+      </p>
 
-      {article && (
-        <ArticleCard
+    </div>
+
+    <div className="grid gap-6 grid-cols-1
+xl:grid-cols-[1fr_420px]">
+
+      {/* ===========================
+          Columna Izquierda
+      =========================== */}
+
+      <div className="space-y-6">
+
+        {/* Scanner */}
+
+        <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+
+          <div className="mb-5 flex items-center gap-3">
+
+            <QrCode
+              size={24}
+              className="text-[#3C83F6]"
+            />
+
+            <h2 className="text-xl font-bold text-[#333333]">
+              Escáner QR
+            </h2>
+
+          </div>
+
+          <QRScanner
+            onDetected={handleDetected}
+            resetKey={scannerKey}
+          />
+
+        </section>
+
+        {/* Producto */}
+
+        
+
+      </div>
+
+      {/* ===========================
+          Carrito
+      =========================== */}
+
+      <aside className="space-y-5">
+
+        {/* Carrito */}
+
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+
+          <Cart
+            items={cart}
+            onFinish={handleFinishSale}
+            onIncrease={handleIncrease}
+            onDecrease={handleDecrease}
+            onRemove={handleRemove}
+            onClear={handleClear}
+          />
+
+        </div>
+
+      </aside>
+
+    </div>
+
+    {/* Modales */}
+
+    {completedSale && (
+      <SaleCompletedModal
+        open={saleCompletedOpen}
+        saleId={completedSale.id}
+        createdAt={completedSale.createdAt}
+        total={completedSale.total}
+        hasLocation={completedSale.hasLocation}
+        items={completedSale.items}
+        onClose={handleCloseSaleModal}
+        buttonText="Nueva venta"
+      />
+    )}
+
+    {confirmData && (
+      <ConfirmDialog
+        open={confirmOpen}
+        title={confirmData.title}
+        description={confirmData.description}
+        confirmText="Aceptar"
+        cancelText="Cancelar"
+        onConfirm={confirmData.onConfirm}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setConfirmData(null);
+        }}
+      />
+    )}
+
+    <DetectedArticleModal
+          open={!!article}
           article={article}
           quantity={quantity}
           onQuantityChange={setQuantity}
           onAdd={handleAdd}
-        />
-      )}
-
-      <Cart
-        items={cart}
-        onFinish={handleFinishSale}
-        onIncrease={handleIncrease}
-        onDecrease={handleDecrease}
-        onRemove={handleRemove}
-        onClear={handleClear}
-      />
-
-      {completedSale && (
-        <SaleCompletedModal
-          open={saleCompletedOpen}
-          saleId={completedSale.id}
-          createdAt={completedSale.createdAt}
-          total={completedSale.total}
-          hasLocation={completedSale.hasLocation}
-          items={completedSale.items}
-          onClose={handleCloseSaleModal}
-          buttonText="Nueva venta"
-        />
-      )}
-
-      {confirmData && (
-        <ConfirmDialog
-          open={confirmOpen}
-          title={confirmData.title}
-          description={confirmData.description}
-          confirmText="Aceptar"
-          cancelText="Cancelar"
-          onConfirm={confirmData.onConfirm}
           onCancel={() => {
-            setConfirmOpen(false);
-            setConfirmData(null);
+            setArticle(null);
+            setQuantity("1");
+            setScannerKey((k) => k + 1);
           }}
         />
-      )}
-        
-    </div>
-  );
+
+  </div>
+);
 }

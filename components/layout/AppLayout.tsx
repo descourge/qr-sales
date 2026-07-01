@@ -7,6 +7,10 @@ import AppHeader from "./AppHeader";
 
 import AutoSync from "@/shared/components/AutoSync";
 
+import { useEffect} from "react";
+
+import { syncOfflineArticles } from "@/features/sales/services/article.service";
+
 export default function AppLayout({
   children,
 }: {
@@ -14,6 +18,28 @@ export default function AppLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] =
     useState(false);
+
+    useEffect(() => {
+  if (navigator.onLine) {
+    syncOfflineArticles();
+  }
+
+  function handleOnline() {
+    syncOfflineArticles();
+  }
+
+  window.addEventListener(
+    "online",
+    handleOnline
+  );
+
+  return () => {
+    window.removeEventListener(
+      "online",
+      handleOnline
+    );
+  };
+}, []);
 
   return (
     <div className="flex min-h-screen overflow-hidden bg-slate-50">

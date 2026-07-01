@@ -101,36 +101,34 @@ export default function AppHeader({
         {/* Instalar */}
 
         {canInstall && (
+  <button
+    type="button"
+    onClick={install}
+    className="
+      flex
+      items-center
+      justify-center
+      rounded-xl
+      bg-[#3C83F6]
+      p-2.5
+      text-white
+      shadow
+      transition-all
+      duration-300
+      hover:bg-[#2F6FD3]
+      hover:shadow-lg
+      sm:px-5
+      sm:gap-2
+    "
+    title="Instalar aplicación"
+  >
+    <Download size={18} />
 
-          <button
-            type="button"
-            onClick={install}
-            className="
-              hidden
-              items-center
-              gap-2
-              rounded-xl
-              bg-[#3C83F6]
-              px-5
-              py-2.5
-              font-medium
-              text-white
-              shadow
-              transition-all
-              duration-300
-              hover:-translate-y-0.5
-              hover:bg-[#2F6FD3]
-              hover:shadow-lg
-              md:flex
-            "
-          >
-            <Download size={18} />
-
-            Instalar App
-
-          </button>
-
-        )}
+    <span className="hidden sm:inline">
+      Instalar App
+    </span>
+  </button>
+)}
 
         {/* Estado */}
 
@@ -171,48 +169,46 @@ export default function AppHeader({
         {/* Usuario */}
 
         <div
-          className="
-            hidden
-            items-center
-            gap-3
-            rounded-xl
-            border
-            border-gray-200
-            bg-white
-            px-4
-            py-2
-            shadow-sm
-            md:flex
-          "
-        >
+  className="
+    flex
+    items-center
+    gap-3
+    rounded-xl
+    border
+    border-gray-200
+    bg-white
+    px-2
+    py-2
+    shadow-sm
+    sm:px-4
+  "
+>
 
           <div
-            className="
-              flex
-              h-10
-              w-10
-              items-center
-              justify-center
-              rounded-full
-              bg-[#3C83F6]
-              font-bold
-              text-white
-            "
-          >
-            U
-          </div>
+  className="
+    flex
+    h-10
+    w-10
+    items-center
+    justify-center
+    rounded-full
+    bg-[#3C83F6]
+    font-bold
+    text-white
+  "
+>
+  U
+</div>
 
-          <div>
+<div className="hidden md:block">
+  <p className="font-semibold text-[#333333]">
+    Usuario
+  </p>
 
-            <p className="font-semibold text-[#333333]">
-              Usuario
-            </p>
-
-            <p className="text-xs text-slate-500">
-              Administrador
-            </p>
-
-          </div>
+  <p className="text-xs text-slate-500">
+    Administrador
+  </p>
+</div>
 
         </div>
 

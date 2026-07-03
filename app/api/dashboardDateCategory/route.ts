@@ -100,7 +100,7 @@ export async function POST(req: Request) {
           },
         },
 
-        take: 5,
+        take: 20,
       });
 
     const products = await Promise.all(

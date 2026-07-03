@@ -12,9 +12,28 @@ import {
 import { getDashboard } from "@/features/dashboard/services/dashboard.service";
 import AnimatedNumber from "@/shared/components/AnimatedNumber";
 
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import { Calendar as CalendarIcon } from "lucide-react"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+
+import * as React from "react";
+
+import { format, setDate } from "date-fns"
+
+import { getDashboardByDate } from "@/features/dashboard/services/dashboard.service";
+
 export default function DashboardPage() {
   const [dashboard, setDashboard] =
     useState<any>(null);
+
+    const [date_ini, setDate_ini] = React.useState<Date>();
+
+    const [date_fin, setDate_fin] = React.useState<Date>();
 
   useEffect(() => {
     loadDashboard();
@@ -29,6 +48,13 @@ export default function DashboardPage() {
   }
 
   setDashboard(data);
+}
+
+async function setDashboardDate(){;
+  if(date_ini && date_fin){
+    const data = await getDashboardByDate(date_ini, date_fin);
+    setDashboard(data);
+  }
 }
 
   if (!dashboard) {
@@ -76,6 +102,49 @@ export default function DashboardPage() {
       </div>
 
       {/* KPIs */}
+
+      
+
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-2">
+        <div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                data-empty={!date_ini}
+                className="w-[280px] justify-start text-left font-normal data-[empty=true]:text-muted-foreground"
+              >
+                <CalendarIcon />
+                {date_ini ? format(date_ini, "PPP") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar mode="single" selected={date_ini} onSelect={setDate_ini} />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                data-empty={!date_fin}
+                className="w-[280px] justify-start text-left font-normal data-[empty=true]:text-muted-foreground"
+              >
+                <CalendarIcon />
+                {date_fin ? format(date_fin, "PPP") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar mode="single" selected={date_fin} onSelect={(selectedDate) => {
+                  setDate_fin(selectedDate)
+                  setDashboardDate();
+                }}  />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
 

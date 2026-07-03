@@ -50,7 +50,8 @@ export default function DashboardPage() {
   setDashboard(data);
 }
 
-async function setDashboardDate(){;
+async function setDashboardDate(date_fin?: Date){;
+  setDate_fin(date_fin);
   if(date_ini && date_fin){
     const data = await getDashboardByDate(date_ini, date_fin);
     setDashboard(data);
@@ -138,8 +139,7 @@ async function setDashboardDate(){;
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
               <Calendar mode="single" selected={date_fin} onSelect={(selectedDate) => {
-                  setDate_fin(selectedDate)
-                  setDashboardDate();
+                  setDashboardDate(selectedDate);
                 }}  />
             </PopoverContent>
           </Popover>

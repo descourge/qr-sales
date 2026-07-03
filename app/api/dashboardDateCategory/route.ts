@@ -11,6 +11,8 @@ export async function POST(req: Request) {
     const tomorrow = new Date(date_fin);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
+    const categoryFilter = category ? { category } : {};
+
     // Ventas de hoy
     const todaySales = await prisma.sale.findMany({
       where: {
@@ -18,6 +20,13 @@ export async function POST(req: Request) {
           gte: today,
           lt: tomorrow,
         },
+        details:{
+            some: {
+                article:{
+                        category: category,
+                }
+            }
+        }
       },
     });
 
@@ -44,6 +53,13 @@ export async function POST(req: Request) {
             gte: today,
             lt: tomorrow,
           },
+          details:{
+            some: {
+                article:{
+                        category: category,
+                }
+            }
+        }
         },
       },
     });
@@ -59,6 +75,13 @@ export async function POST(req: Request) {
             gte: today,
             lt: tomorrow,
         },
+        details:{
+            some: {
+                article:{
+                        category: category,
+                }
+            }
+        }
       },
     });
 
@@ -93,6 +116,7 @@ export async function POST(req: Request) {
           code: article?.code,
           description: article?.description,
           quantity: item._sum.quantity ?? 0,
+          category: article?.category ?? "",
         };
       })
     );

@@ -27,6 +27,18 @@ import { format, setDate } from "date-fns"
 
 import { getDashboardByDate } from "@/features/dashboard/services/dashboard.service";
 
+import { getDashboardByDateCategory } from "@/features/dashboard/services/dashboard.service";
+
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
 export default function DashboardPage() {
   const [dashboard, setDashboard] =
     useState<any>(null);
@@ -34,6 +46,15 @@ export default function DashboardPage() {
     const [date_ini, setDate_ini] = React.useState<Date>();
 
     const [date_fin, setDate_fin] = React.useState<Date>();
+
+    const items = [
+      { label: "Bebidas", value: "Bebidas" },
+      { label: "Snacks", value: "Snacks" },
+      { label: "Abarrotes", value: "Abarrotes" },
+      { label: "Lácteos", value: "Lácteos" },
+      { label: "Frutas", value: "Frutas" },
+      { label: "Limpieza", value: "Limpieza" },
+    ]
 
   useEffect(() => {
     loadDashboard();
@@ -55,6 +76,16 @@ async function setDashboardDate(date_fin?: Date){;
   if(date_ini && date_fin){
     const data = await getDashboardByDate(date_ini, date_fin);
     setDashboard(data);
+  }
+}
+
+async function setDashboardDateCategory(category?: string){;
+  if(date_ini && date_fin){
+    const data = await getDashboardByDateCategory(date_ini, date_fin, category);
+
+    const filterData =
+      data.topProducts.filter((item: any) => item.category === category);
+    setDashboard({ ...data, topProducts: filterData });
   }
 }
 
@@ -106,7 +137,7 @@ async function setDashboardDate(date_fin?: Date){;
 
       
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-3 xl:grid-cols-3">
         <div>
           <Popover>
             <PopoverTrigger asChild>
@@ -116,7 +147,7 @@ async function setDashboardDate(date_fin?: Date){;
                 className="w-[280px] justify-start text-left font-normal data-[empty=true]:text-muted-foreground"
               >
                 <CalendarIcon />
-                {date_ini ? format(date_ini, "PPP") : <span>Pick a date</span>}
+                {date_ini ? format(date_ini, "PPP") : <span>Fecha de inicio</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
@@ -134,7 +165,7 @@ async function setDashboardDate(date_fin?: Date){;
                 className="w-[280px] justify-start text-left font-normal data-[empty=true]:text-muted-foreground"
               >
                 <CalendarIcon />
-                {date_fin ? format(date_fin, "PPP") : <span>Pick a date</span>}
+                {date_fin ? format(date_fin, "PPP") : <span>Fecha de fin</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
@@ -144,6 +175,27 @@ async function setDashboardDate(date_fin?: Date){;
             </PopoverContent>
           </Popover>
         </div>
+
+        <div>
+          <Select onValueChange={(value) => {
+            setDashboardDateCategory(value);
+          }}>
+            <SelectTrigger className="w-full max-w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Categorías</SelectLabel>
+                {items.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">

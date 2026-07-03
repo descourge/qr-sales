@@ -21,10 +21,15 @@ export default function DashboardPage() {
   }, []);
 
   async function loadDashboard() {
-    const data = await getDashboard();
+  const data =
+    await getDashboard();
 
-    setDashboard(data);
+  if (!data) {
+    return;
   }
+
+  setDashboard(data);
+}
 
   if (!dashboard) {
     return (

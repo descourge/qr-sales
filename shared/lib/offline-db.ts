@@ -11,7 +11,7 @@ async function getDatabase() {
 
   return openDB(
     "qr-sales-db",
-    2,
+    3,
     {
       upgrade(db) {
 
@@ -41,6 +41,19 @@ async function getDatabase() {
             }
           );
         }
+
+        if (
+            !db.objectStoreNames.contains(
+                "dashboard"
+            )
+            ) {
+            db.createObjectStore(
+                "dashboard",
+                {
+                keyPath: "id",
+                }
+            );
+            }
 
       },
     }
@@ -128,4 +141,30 @@ export async function getOfflineArticleByCode(
         article.code === code
     ) ?? null
   );
+}
+
+export async function saveDashboard(
+  dashboard: any
+) {
+  const db = await getDatabase();
+
+  await db.put(
+    "dashboard",
+    {
+      id: "main",
+      data: dashboard,
+    }
+  );
+}
+
+export async function getOfflineDashboard() {
+  const db = await getDatabase();
+
+  const dashboard =
+    await db.get(
+      "dashboard",
+      "main"
+    );
+
+  return dashboard?.data ?? null;
 }

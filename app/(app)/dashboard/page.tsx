@@ -21,14 +21,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-import * as React from "react";
-
-import { format, setDate } from "date-fns"
-
-import { getDashboardByDate } from "@/features/dashboard/services/dashboard.service";
-
-import { getDashboardByDateCategory } from "@/features/dashboard/services/dashboard.service";
-
 import {
   Select,
   SelectContent,
@@ -39,54 +31,43 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+import { format } from "date-fns";
+
 export default function DashboardPage() {
   const [dashboard, setDashboard] =
     useState<any>(null);
 
-    const [date_ini, setDate_ini] = React.useState<Date>();
+    const [filters, setFilters] =
+  useState<{
+    startDate?: Date;
+    endDate?: Date;
+    category?: string;
+  }>({});
 
-    const [date_fin, setDate_fin] = React.useState<Date>();
+  const [appliedFilters, setAppliedFilters] = useState<{
+  startDate?: Date;
+  endDate?: Date;
+  category?: string;
+}>({});
 
-    const items = [
-      { label: "Bebidas", value: "Bebidas" },
-      { label: "Snacks", value: "Snacks" },
-      { label: "Abarrotes", value: "Abarrotes" },
-      { label: "Lácteos", value: "Lácteos" },
-      { label: "Frutas", value: "Frutas" },
-      { label: "Limpieza", value: "Limpieza" },
-    ]
+const [categories, setCategories] =
+  useState<string[]>([]);
 
   useEffect(() => {
     loadDashboard();
   }, []);
 
-  async function loadDashboard() {
+async function loadDashboard(
+  currentFilters = filters
+) {
   const data =
-    await getDashboard();
+    await getDashboard(currentFilters);
 
   if (!data) {
     return;
   }
 
   setDashboard(data);
-}
-
-async function setDashboardDate(date_fin?: Date){;
-  setDate_fin(date_fin);
-  if(date_ini && date_fin){
-    const data = await getDashboardByDate(date_ini, date_fin);
-    setDashboard(data);
-  }
-}
-
-async function setDashboardDateCategory(category?: string){;
-  if(date_ini && date_fin){
-    const data = await getDashboardByDateCategory(date_ini, date_fin, category);
-
-    const filterData =
-      data.topProducts.filter((item: any) => item.category === category);
-    setDashboard({ ...data, topProducts: filterData });
-  }
 }
 
   if (!dashboard) {
@@ -137,66 +118,249 @@ async function setDashboardDateCategory(category?: string){;
 
       
 
-      <div className="grid gap-6 md:grid-cols-3 xl:grid-cols-3">
-        <div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                data-empty={!date_ini}
-                className="w-[280px] justify-start text-left font-normal data-[empty=true]:text-muted-foreground"
-              >
-                <CalendarIcon />
-                {date_ini ? format(date_ini, "PPP") : <span>Fecha de inicio</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar mode="single" selected={date_ini} onSelect={setDate_ini} />
-            </PopoverContent>
-          </Popover>
-        </div>
+<div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
 
-        <div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                data-empty={!date_fin}
-                className="w-[280px] justify-start text-left font-normal data-[empty=true]:text-muted-foreground"
-              >
-                <CalendarIcon />
-                {date_fin ? format(date_fin, "PPP") : <span>Fecha de fin</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar mode="single" selected={date_fin} onSelect={(selectedDate) => {
-                  setDashboardDate(selectedDate);
-                }}  />
-            </PopoverContent>
-          </Popover>
-        </div>
+  <div
+    className="
+      grid
+      gap-4
+      lg:grid-cols-[1fr_1fr_1fr_auto_auto]
+    "
+  >
 
-        <div>
-          <Select onValueChange={(value) => {
-            setDashboardDateCategory(value);
-          }}>
-            <SelectTrigger className="w-full max-w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel>Categorías</SelectLabel>
-                {items.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
+    {/* Fecha inicio */}
 
-      </div>
+    <Popover>
+
+      <PopoverTrigger asChild>
+
+        <Button
+          variant="outline"
+          data-empty={!filters.startDate}
+          className="
+            h-11
+            w-full
+            justify-start
+            text-left
+            font-normal
+            data-[empty=true]:text-muted-foreground
+          "
+        >
+
+          <CalendarIcon className="mr-2 h-4 w-4" />
+
+          {filters.startDate
+            ? format(filters.startDate, "dd/MM/yyyy")
+            : "Fecha inicio"}
+
+        </Button>
+
+      </PopoverTrigger>
+
+      <PopoverContent
+        className="w-auto p-0"
+      >
+
+        <Calendar
+          mode="single"
+          selected={filters.startDate}
+          onSelect={(date) =>
+            setFilters({
+              ...filters,
+              startDate: date,
+            })
+          }
+        />
+
+      </PopoverContent>
+
+    </Popover>
+
+    {/* Fecha fin */}
+
+    <Popover>
+
+      <PopoverTrigger asChild>
+
+        <Button
+          variant="outline"
+          data-empty={!filters.endDate}
+          className="
+            h-11
+            w-full
+            justify-start
+            text-left
+            font-normal
+            data-[empty=true]:text-muted-foreground
+          "
+        >
+
+          <CalendarIcon className="mr-2 h-4 w-4" />
+
+          {filters.endDate
+            ? format(filters.endDate, "dd/MM/yyyy")
+            : "Fecha fin"}
+
+        </Button>
+
+      </PopoverTrigger>
+
+      <PopoverContent
+        className="w-auto p-0"
+      >
+
+        <Calendar
+          mode="single"
+          selected={filters.endDate}
+          onSelect={(date) =>
+            setFilters({
+              ...filters,
+              endDate: date,
+            })
+          }
+        />
+
+      </PopoverContent>
+
+    </Popover>
+
+    {/* Categoría */}
+
+    <Select
+      value={filters.category}
+      onValueChange={(value) =>
+        setFilters({
+          ...filters,
+          category: value,
+        })
+      }
+    >
+
+      <SelectTrigger
+        className="h-11 w-full"
+      >
+
+        <SelectValue
+          placeholder="Categoría"
+        />
+
+      </SelectTrigger>
+
+      <SelectContent>
+
+        <SelectGroup>
+
+          <SelectLabel>
+            Categorías
+          </SelectLabel>
+
+          {categories.map(category => (
+
+            <SelectItem
+                key={category}
+                value={category}
+            >
+
+                {category}
+
+            </SelectItem>
+
+        ))}
+
+        </SelectGroup>
+
+      </SelectContent>
+
+    </Select>
+
+    {/* Aplicar */}
+
+    <Button
+  onClick={() => {
+    setAppliedFilters(filters);
+    loadDashboard(filters);
+  }}
+>
+  Aplicar filtros
+</Button>
+
+    {/* Limpiar */}
+
+    <Button
+  variant="outline"
+  onClick={() => {
+
+    const empty = {};
+
+    setFilters(empty);
+    setAppliedFilters(empty);
+
+    loadDashboard(empty);
+
+  }}
+>
+  Limpiar
+</Button>
+
+  </div>
+
+</div>
+
+<div
+  key={JSON.stringify(appliedFilters)}
+  className="
+    inline-flex
+    max-w-fit
+    animate-filter-change
+    rounded-xl
+    border
+    border-blue-200
+    bg-blue-50
+    px-5
+    py-3
+    shadow-sm
+  "
+>
+
+  <div className="flex flex-col">
+
+    <span className="text-sm font-semibold text-blue-700">
+      Mostrando información
+    </span>
+
+    <span className="text-sm text-slate-600">
+
+      {appliedFilters.startDate || appliedFilters.endDate ? (
+  <>
+    {appliedFilters.startDate
+      ? format(appliedFilters.startDate, "dd/MM/yyyy")
+      : "Inicio"}
+
+    {" — "}
+
+    {appliedFilters.endDate
+      ? format(appliedFilters.endDate, "dd/MM/yyyy")
+      : "Hoy"}
+  </>
+) : (
+"Ventas totales"
+)}
+      {appliedFilters.category && (
+  <>
+    {" · "}
+    Categoría:
+    <span className="font-semibold">
+      {" "}
+      {appliedFilters.category}
+    </span>
+  </>
+)}
+
+    </span>
+
+  </div>
+
+</div>
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
 
@@ -211,8 +375,14 @@ async function setDashboardDateCategory(category?: string){;
             <div>
 
               <p className="text-sm text-slate-500">
-                Ventas hoy
-              </p>
+
+{appliedFilters.startDate ||
+ appliedFilters.endDate ||
+ appliedFilters.category
+  ? "Ventas filtradas"
+  : "Ventas totales"}
+
+</p>
 
               <h2 className="mt-2 text-4xl font-bold text-[#333333]">
 

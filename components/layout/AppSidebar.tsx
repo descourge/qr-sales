@@ -21,7 +21,7 @@ export default function AppSidebar({
     <aside
       className="
         flex
-        h-screen
+        h-full
         w-72
         flex-col
         border-r

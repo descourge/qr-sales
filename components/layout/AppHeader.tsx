@@ -59,21 +59,36 @@ export default function AppHeader({
   }, []);
 
   return (
-    <header
-      className="
-        flex
-        h-20
-        items-center
-        justify-between
-        border-b
-        border-gray-200
-        bg-white
-        px-4
-        shadow-sm
-        sm:px-6
-        lg:px-10
-      "
-    >
+<header
+  className="
+    fixed
+    top-0
+    left-0
+    right-0
+
+    lg:left-72
+
+    z-40
+
+    flex
+    h-20
+    items-center
+    justify-between
+
+    border-b
+    border-gray-200
+
+    bg-white/95
+    backdrop-blur-md
+
+    px-4
+
+    shadow-sm
+
+    sm:px-6
+    lg:px-10
+  "
+>
       {/* Lado izquierdo */}
 
       <div className="flex items-center gap-3">

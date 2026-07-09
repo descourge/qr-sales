@@ -30,6 +30,12 @@
 
   --color-ring: var(--ring);
 
+  --color-popover: var(--popover);
+--color-popover-foreground: var(--popover-foreground);
+
+--input: #e5e7eb;
+--color-input: var(--input);
+
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
@@ -38,6 +44,7 @@
 }
 
 :root {
+
   /* ---------- Colores corporativos ---------- */
 
   --background: #f8fafc;
@@ -51,6 +58,11 @@
 
   --card: #ffffff;
   --card-foreground: #333333;
+
+  /* NUEVO */
+
+  --popover: #ffffff;
+  --popover-foreground: #333333;
 
   --accent: #f6bf1c;
   --accent-foreground: #333333;
@@ -169,4 +181,20 @@
     display: none !important;
   }
 
+}
+
+@keyframes filterChange {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-filter-change {
+  animation: filterChange .25s ease-out;
 }

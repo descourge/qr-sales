@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import AppSidebar from "./AppSidebar";
 import AppHeader from "./AppHeader";
 
 import AutoSync from "@/shared/components/AutoSync";
 
-import { useEffect} from "react";
-
 import { syncOfflineArticles } from "@/features/sales/services/article.service";
+import { syncOfflineSales } from "@/features/dashboard/services/offline-sales.service";
 
 export default function AppLayout({
   children,
@@ -19,30 +18,41 @@ export default function AppLayout({
   const [sidebarOpen, setSidebarOpen] =
     useState(false);
 
-    useEffect(() => {
-  if (navigator.onLine) {
-    syncOfflineArticles();
-  }
+  useEffect(() => {
 
-  function handleOnline() {
-    syncOfflineArticles();
-  }
+    async function synchronizeOfflineData() {
 
-  window.addEventListener(
-    "online",
-    handleOnline
-  );
+      await Promise.all([
+        syncOfflineArticles(),
+        syncOfflineSales(),
+      ]);
 
-  return () => {
-    window.removeEventListener(
+    }
+
+    if (navigator.onLine) {
+      synchronizeOfflineData();
+    }
+
+    function handleOnline() {
+      synchronizeOfflineData();
+    }
+
+    window.addEventListener(
       "online",
       handleOnline
     );
-  };
-}, []);
+
+    return () => {
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+    };
+
+  }, []);
 
   return (
-    <div className="flex min-h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-slate-50">
 
       {/* Sidebar escritorio */}
 
@@ -103,13 +113,14 @@ export default function AppLayout({
       {/* Contenido */}
 
       <div
-        className="
-          flex
-          min-w-0
-          flex-1
-          flex-col
-        "
-      >
+  className="
+    flex
+    min-w-0
+    flex-1
+    flex-col
+    overflow-hidden
+  "
+>
 
         <AppHeader
           onOpenSidebar={() =>
@@ -119,16 +130,22 @@ export default function AppLayout({
 
         <AutoSync />
 
-        <main
-          className="
-            min-w-0
-            flex-1
-            overflow-x-hidden
-            p-4
-            sm:p-6
-            lg:p-8
-          "
-        >
+<main
+  className="
+    flex-1
+
+    overflow-y-auto
+    overflow-x-hidden
+
+    pt-24
+
+    px-4
+    pb-6
+
+    sm:px-6
+    lg:px-8
+  "
+>
 
           {children}
 

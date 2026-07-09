@@ -11,7 +11,7 @@ async function getDatabase() {
 
   return openDB(
     "qr-sales-db",
-    3,
+    5,
     {
       upgrade(db) {
 
@@ -55,9 +55,60 @@ async function getDatabase() {
             );
             }
 
+        if (
+            !db.objectStoreNames.contains(
+              "sales"
+            )
+          ) {
+            db.createObjectStore(
+              "sales",
+              {
+                keyPath: "id",
+              }
+            );
+          }
+
       },
     }
   );
+}
+
+export async function saveSales(
+  sales: any[]
+) {
+
+  const db =
+    await getDatabase();
+
+  const tx =
+    db.transaction(
+      "sales",
+      "readwrite"
+    );
+
+  await tx
+    .objectStore("sales")
+    .clear();
+
+  for (const sale of sales) {
+
+    await tx
+      .objectStore("sales")
+      .put(sale);
+
+  }
+
+  await tx.done;
+
+}
+
+export async function getOfflineSales() {
+
+  const db =
+    await getDatabase();
+
+  return db.getAll("sales");
+
 }
 
 export async function savePendingSale(
@@ -141,30 +192,4 @@ export async function getOfflineArticleByCode(
         article.code === code
     ) ?? null
   );
-}
-
-export async function saveDashboard(
-  dashboard: any
-) {
-  const db = await getDatabase();
-
-  await db.put(
-    "dashboard",
-    {
-      id: "main",
-      data: dashboard,
-    }
-  );
-}
-
-export async function getOfflineDashboard() {
-  const db = await getDatabase();
-
-  const dashboard =
-    await db.get(
-      "dashboard",
-      "main"
-    );
-
-  return dashboard?.data ?? null;
 }

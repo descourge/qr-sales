@@ -1,144 +1,98 @@
 import {
-  getOfflineDashboard,
-  saveDashboard,
+  getOfflineSales,
 } from "@/shared/lib/offline-db";
 
-export async function getDashboard() {
+import {
+  buildDashboard,
+} from "@/features/dashboard/lib/build-dashboard";
+
+export type DashboardFilters = {
+  startDate?: Date;
+  endDate?: Date;
+  category?: string;
+};
+
+export async function getDashboard(
+  filters?: DashboardFilters
+) {
+
+  const params =
+    new URLSearchParams();
+
+  if (filters?.startDate) {
+
+    params.set(
+      "startDate",
+      filters.startDate.toISOString()
+    );
+
+  }
+
+  if (filters?.endDate) {
+
+    params.set(
+      "endDate",
+      filters.endDate.toISOString()
+    );
+
+  }
+
+  if (filters?.category) {
+
+    params.set(
+      "category",
+      filters.category
+    );
+
+  }
+
+  const url =
+    `/api/dashboard${
+      params.toString()
+        ? `?${params.toString()}`
+        : ""
+    }`;
+
+  /* ==========================
+     OFFLINE
+  ========================== */
 
   if (!navigator.onLine) {
 
-    return await getOfflineDashboard();
+    const sales =
+      await getOfflineSales();
+
+    return buildDashboard(
+      sales,
+      filters
+    );
 
   }
+
+  /* ==========================
+     ONLINE
+  ========================== */
 
   try {
 
     const response =
-      await fetch("/api/dashboard");
+      await fetch(url);
 
     if (!response.ok) {
       throw new Error();
     }
 
-    const dashboard =
-      await response.json();
-
-    await saveDashboard(
-      dashboard
-    );
-
-    return dashboard;
+    return await response.json();
 
   } catch {
 
-    return await getOfflineDashboard();
+    const sales =
+      await getOfflineSales();
 
-  }
-
-}
-
-export async function syncOfflineDashboard() {
-  try {
-    const response = await fetch(
-      "/api/dashboard"
+    return buildDashboard(
+      sales,
+      filters
     );
-
-    if (!response.ok) return;
-
-    const dashboard =
-      await response.json();
-
-    await saveDashboard(
-      dashboard
-    );
-
-  } catch (error) {
-    console.error(
-      "No fue posible actualizar el dashboard offline.",
-      error
-    );
-  }
-}
-
-export async function getDashboardByDate(date_ini?: Date, date_fin?: Date) {
-
-    console.log("getDashboardByDate", date_ini, date_fin);
-
-  if (!navigator.onLine) {
-
-    return await getOfflineDashboard();
-
-  }
-
-  try {
-
-    const response =
-      await fetch("/api/dashboardDate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ date_ini, date_fin }),
-      });
-
-    if (!response.ok) {
-      throw new Error();
-    }
-
-    const dashboard =
-      await response.json();
-
-    await saveDashboard(
-      dashboard
-    );
-
-    return dashboard;
-
-  } catch {
-
-    return await getOfflineDashboard();
-
-  }
-
-}
-
-export async function getDashboardByDateCategory(date_ini?: Date, date_fin?: Date, category?: string) {
-
-    console.log("getDashboardByDateCategory", date_ini, date_fin, category);
-
-  if (!navigator.onLine) {
-
-    return await getOfflineDashboard();
-
-  }
-
-  try {
-
-    const response =
-      await fetch("/api/dashboardDateCategory", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ date_ini, date_fin, category }),
-      });
-
-    if (!response.ok) {
-      throw new Error();
-    }
-
-    const dashboard =
-      await response.json();
-
-    await saveDashboard(
-      dashboard
-    );
-
-    return dashboard;
-
-  } catch {
-
-    return await getOfflineDashboard();
 
   }
 

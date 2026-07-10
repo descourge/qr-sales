@@ -21,6 +21,14 @@ import {
   useSession,
 } from "@/features/auth/context/SessionProvider";
 
+import {
+
+  syncOfflineBranches,
+
+  syncOfflineUsers,
+
+} from "@/features/auth/services/offline-auth.service";
+
 export default function AppLayout({
   children,
 }: {
@@ -67,6 +75,14 @@ useEffect(() => {
       ),
 
       syncOfflineSales(),
+      
+      syncOfflineBranches(
+        companyId
+      ),
+
+      syncOfflineUsers(
+        companyId
+      ),
 
     ]);
 

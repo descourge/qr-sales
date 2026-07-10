@@ -11,7 +11,7 @@ async function getDatabase() {
 
   return openDB(
     "qr-sales-db",
-    5,
+    6,
     {
       upgrade(db) {
 
@@ -67,6 +67,36 @@ async function getDatabase() {
               }
             );
           }
+
+          if (
+  !db.objectStoreNames.contains(
+    "branches"
+  )
+) {
+
+  db.createObjectStore(
+    "branches",
+    {
+      keyPath: "id",
+    }
+  );
+
+}
+
+if (
+  !db.objectStoreNames.contains(
+    "users"
+  )
+) {
+
+  db.createObjectStore(
+    "users",
+    {
+      keyPath: "id",
+    }
+  );
+
+}
 
       },
     }
@@ -251,5 +281,167 @@ export async function getOfflineArticleByCode(
     null
 
   );
+
+}
+
+/* ===========================================
+   SUCURSALES OFFLINE
+=========================================== */
+
+export async function saveBranches(
+  companyId: number,
+  branches: any[]
+) {
+
+  const db =
+    await getDatabase();
+
+  const tx =
+    db.transaction(
+      "branches",
+      "readwrite"
+    );
+
+  const store =
+    tx.objectStore("branches");
+
+  const current =
+    await store.getAll();
+
+  for (const branch of current) {
+
+    if (
+      branch.companyId ===
+      companyId
+    ) {
+
+      await store.delete(
+        branch.id
+      );
+
+    }
+
+  }
+
+  for (const branch of branches) {
+
+    await store.put(branch);
+
+  }
+
+  await tx.done;
+
+}
+
+export async function getOfflineBranches(
+  companyId: number
+) {
+
+  const db =
+    await getDatabase();
+
+  const branches =
+    await db.getAll(
+      "branches"
+    );
+
+  return branches.filter(
+
+    branch =>
+
+      branch.companyId ===
+      companyId
+
+  );
+
+}
+
+/* ===========================================
+   USUARIOS OFFLINE
+=========================================== */
+
+export async function saveUsers(
+  companyId: number,
+  users: any[]
+) {
+
+  const db =
+    await getDatabase();
+
+  const tx =
+    db.transaction(
+      "users",
+      "readwrite"
+    );
+
+  const store =
+    tx.objectStore("users");
+
+  const current =
+    await store.getAll();
+
+  for (const user of current) {
+
+    if (
+      user.companyId ===
+      companyId
+    ) {
+
+      await store.delete(
+        user.id
+      );
+
+    }
+
+  }
+
+  for (const user of users) {
+
+    await store.put(user);
+
+  }
+
+  await tx.done;
+
+}
+
+export async function getOfflineUsers(
+  companyId: number,
+  branchId?: number
+) {
+
+  const db =
+    await getDatabase();
+
+  let users =
+    await db.getAll(
+      "users"
+    );
+
+  users =
+    users.filter(
+
+      user =>
+
+        user.companyId ===
+        companyId
+
+    );
+
+  if (branchId) {
+
+    users =
+      users.filter(
+
+        user =>
+
+          user.branchId ===
+          branchId
+
+      );
+
+  }
+
+  return users;
 
 }

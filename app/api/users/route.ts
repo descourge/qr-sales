@@ -50,13 +50,17 @@ export async function GET(
 
       select: {
 
-        id: true,
+  id: true,
 
-        name: true,
+  name: true,
 
-        role: true,
+  role: true,
 
-      },
+  companyId: true,
+
+  branchId: true,
+
+},
 
     });
 

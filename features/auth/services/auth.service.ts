@@ -2,6 +2,13 @@ import {
   SessionData,
 } from "../types";
 
+import {
+  getOfflineBranches,
+  getOfflineUsers,
+  saveBranches,
+  saveUsers,
+} from "@/shared/lib/offline-db";
+
 export async function getCompanies() {
 
   const response =
@@ -17,12 +24,46 @@ export async function getBranches(
   companyId: number
 ) {
 
-  const response =
-    await fetch(
-      `/api/branches?companyId=${companyId}`
+  /* ==========================
+     OFFLINE
+  ========================== */
+
+  if (!navigator.onLine) {
+
+    return getOfflineBranches(
+      companyId
     );
 
-  return response.json();
+  }
+
+  /* ==========================
+     ONLINE
+  ========================== */
+
+  try {
+
+    const response =
+      await fetch(
+        `/api/branches?companyId=${companyId}`
+      );
+
+    const branches =
+      await response.json();
+
+    await saveBranches(
+      companyId,
+      branches
+    );
+
+    return branches;
+
+  } catch {
+
+    return getOfflineBranches(
+      companyId
+    );
+
+  }
 
 }
 
@@ -31,14 +72,48 @@ export async function getUsers(
   branchId: number
 ) {
 
-  const response =
-    await fetch(
+  /* ==========================
+     OFFLINE
+  ========================== */
 
-      `/api/users?companyId=${companyId}&branchId=${branchId}`
+  if (!navigator.onLine) {
 
+    return getOfflineUsers(
+      companyId,
+      branchId
     );
 
-  return response.json();
+  }
+
+  /* ==========================
+     ONLINE
+  ========================== */
+
+  try {
+
+    const response =
+      await fetch(
+        `/api/users?companyId=${companyId}&branchId=${branchId}`
+      );
+
+    const users =
+      await response.json();
+
+    await saveUsers(
+      companyId,
+      users
+    );
+
+    return users;
+
+  } catch {
+
+    return getOfflineUsers(
+      companyId,
+      branchId
+    );
+
+  }
 
 }
 

@@ -36,11 +36,13 @@ export async function GET(
 
       select: {
 
-        id: true,
+  id: true,
 
-        name: true,
+  name: true,
 
-      },
+  companyId: true,
+
+},
 
     });
 

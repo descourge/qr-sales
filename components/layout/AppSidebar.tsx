@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 
 import { navigation } from "@/shared/constants/navigation";
 
+import {useSession} from "@/features/auth/context/SessionProvider";
+
 type Props = {
   mobile?: boolean;
   onNavigate?: () => void;
@@ -16,6 +18,23 @@ export default function AppSidebar({
   onNavigate,
 }: Props) {
   const pathname = usePathname();
+  const { session } = useSession();
+
+  const filteredNavigation = navigation.filter((item) => {
+
+  if (
+    item.href === "/reports" &&
+    session?.user.role !== "ADMIN" &&
+    session?.user.role !== "MANAGER"
+  ) {
+
+    return false;
+
+  }
+
+  return true;
+
+});
 
   return (
     <aside
@@ -64,7 +83,7 @@ export default function AppSidebar({
 
       <nav className="flex-1 space-y-2 p-5">
 
-        {navigation.map((item) => {
+        {filteredNavigation.map((item) => {
           const Icon = item.icon;
 
           const active =

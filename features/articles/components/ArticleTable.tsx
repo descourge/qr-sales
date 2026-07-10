@@ -54,9 +54,9 @@ export default function ArticleTable({
         article.description
           .toLowerCase()
           .includes(value) ||
-        article.category
-          .toLowerCase()
-          .includes(value)
+        article.category.name
+  .toLowerCase()
+  .includes(value)
     );
   }, [articles, search]);
 
@@ -238,20 +238,29 @@ export default function ArticleTable({
                     <td className="px-5 py-4 text-center">
 
                       <span
-                        className="
-                          rounded-full
-                          bg-[#F6BF1C]/20
-                          px-3
-                          py-1
-                          text-sm
-                          font-medium
-                          text-[#333333]
-                        "
-                      >
 
-                        {article.category}
+                      className="
+                        rounded-full
+                        px-3
+                        py-1
+                        text-sm
+                        font-medium
+                        text-white
+                      "
 
-                      </span>
+                      style={{
+
+                        backgroundColor:
+                          article.category.color ??
+                          "#3C83F6",
+
+                      }}
+
+                    >
+
+                      {article.category.name}
+
+                    </span>
 
                     </td>
 

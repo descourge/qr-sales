@@ -2,56 +2,139 @@
 
 import { useEffect, useState } from "react";
 
+import { useRouter } from "next/navigation";
+
 import AppSidebar from "./AppSidebar";
 import AppHeader from "./AppHeader";
 
 import AutoSync from "@/shared/components/AutoSync";
 
-import { syncOfflineArticles } from "@/features/sales/services/article.service";
-import { syncOfflineSales } from "@/features/dashboard/services/offline-sales.service";
+import {
+  syncOfflineArticles,
+} from "@/features/sales/services/article.service";
+
+import {
+  syncOfflineSales,
+} from "@/features/dashboard/services/offline-sales.service";
+
+import {
+  useSession,
+} from "@/features/auth/context/SessionProvider";
 
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarOpen, setSidebarOpen] =
-    useState(false);
 
-  useEffect(() => {
+  const [
+    sidebarOpen,
+    setSidebarOpen,
+  ] = useState(false);
 
-    async function synchronizeOfflineData() {
+  const router =
+    useRouter();
 
-      await Promise.all([
-        syncOfflineArticles(),
-        syncOfflineSales(),
-      ]);
+  const {
 
-    }
+    session,
 
-    if (navigator.onLine) {
-      synchronizeOfflineData();
-    }
+    loading,
 
-    function handleOnline() {
-      synchronizeOfflineData();
-    }
+  } = useSession();
 
-    window.addEventListener(
+  /* ==========================
+     Sincronización Offline
+  ========================== */
+
+useEffect(() => {
+
+  if (!session) {
+
+    return;
+
+  }
+
+  const companyId =
+    session.company.id;
+
+  async function synchronizeOfflineData() {
+
+    await Promise.all([
+
+      syncOfflineArticles(
+        companyId
+      ),
+
+      syncOfflineSales(),
+
+    ]);
+
+  }
+
+  if (navigator.onLine) {
+
+    synchronizeOfflineData();
+
+  }
+
+  function handleOnline() {
+
+    synchronizeOfflineData();
+
+  }
+
+  window.addEventListener(
+    "online",
+    handleOnline
+  );
+
+  return () => {
+
+    window.removeEventListener(
       "online",
       handleOnline
     );
 
-    return () => {
-      window.removeEventListener(
-        "online",
-        handleOnline
-      );
-    };
+  };
 
-  }, []);
+}, [session]);
+  /* ==========================
+     Validar sesión
+  ========================== */
+
+  useEffect(() => {
+
+    if (loading) {
+
+      return;
+
+    }
+
+    if (!session) {
+
+      router.replace("/login");
+
+    }
+
+  }, [
+
+    loading,
+
+    session,
+
+    router,
+
+  ]);
+
+  if (loading || !session) {
+
+    return null;
+
+  }
 
   return (
+
     <div className="flex h-screen overflow-hidden bg-slate-50">
 
       {/* Sidebar escritorio */}
@@ -113,14 +196,14 @@ export default function AppLayout({
       {/* Contenido */}
 
       <div
-  className="
-    flex
-    min-w-0
-    flex-1
-    flex-col
-    overflow-hidden
-  "
->
+        className="
+          flex
+          min-w-0
+          flex-1
+          flex-col
+          overflow-hidden
+        "
+      >
 
         <AppHeader
           onOpenSidebar={() =>
@@ -130,22 +213,18 @@ export default function AppLayout({
 
         <AutoSync />
 
-<main
-  className="
-    flex-1
-
-    overflow-y-auto
-    overflow-x-hidden
-
-    pt-24
-
-    px-4
-    pb-6
-
-    sm:px-6
-    lg:px-8
-  "
->
+        <main
+          className="
+            flex-1
+            overflow-y-auto
+            overflow-x-hidden
+            pt-24
+            px-4
+            pb-6
+            sm:px-6
+            lg:px-8
+          "
+        >
 
           {children}
 
@@ -154,5 +233,7 @@ export default function AppLayout({
       </div>
 
     </div>
+
   );
+
 }

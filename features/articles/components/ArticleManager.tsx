@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import {
   Package,
@@ -21,56 +25,119 @@ import ArticleTable from "./ArticleTable";
 
 import { Article } from "@/shared/types/article";
 
+import {
+  useSession,
+} from "@/features/auth/context/SessionProvider";
+
+import {
+  getArticles,
+} from "@/features/articles/services/article.service";
+
 export default function ArticleManager() {
-  const [articles, setArticles] = useState<Article[]>([]);
 
-  const [open, setOpen] = useState(false);
+  const {
+    session,
+  } = useSession();
 
-  async function loadArticles() {
-    const response = await fetch("/api/articles");
+  const [
+    articles,
+    setArticles,
+  ] = useState<Article[]>([]);
 
-    const data = await response.json();
+  const [
+    open,
+    setOpen,
+  ] = useState(false);
+
+  async function loadArticles(
+    companyId: number
+  ) {
+
+    const data =
+      await getArticles(
+        companyId
+      );
 
     setArticles(data);
+
   }
 
   useEffect(() => {
-    loadArticles();
-  }, []);
 
-  const categories = useMemo(() => {
-    return new Set(
-      articles.map((a) => a.category)
-    ).size;
-  }, [articles]);
+    if (!session) {
 
-  const averagePrice = useMemo(() => {
-    if (articles.length === 0) return 0;
+      return;
 
-    return (
-      articles.reduce(
-        (sum, item) =>
-          sum + Number(item.unitPrice),
-        0
-      ) / articles.length
+    }
+
+    loadArticles(
+      session.company.id
     );
-  }, [articles]);
+
+  }, [session]);
+
+  const categories =
+    useMemo(() => {
+
+      return new Set(
+
+        articles.map(
+          article =>
+            article.category.id
+        )
+
+      ).size;
+
+    }, [articles]);
+
+  const averagePrice =
+    useMemo(() => {
+
+      if (
+        articles.length === 0
+      ) {
+
+        return 0;
+
+      }
+
+      return (
+
+        articles.reduce(
+
+          (
+            sum,
+            article
+          ) =>
+
+            sum +
+            Number(
+              article.unitPrice
+            ),
+
+          0
+
+        ) /
+
+        articles.length
+
+      );
+
+    }, [articles]);
 
   return (
+
     <div className="space-y-8">
 
       {/* KPIs */}
 
-      <div className="grid gap-5 grid-cols-1
-md:grid-cols-3">
+      <div className="grid gap-5 grid-cols-1 md:grid-cols-3">
 
         <div className="rounded-2xl border bg-white p-5 shadow-sm">
 
           <div className="flex items-center gap-3">
 
-            <Package
-              className="text-[#3C83F6]"
-            />
+            <Package className="text-[#3C83F6]" />
 
             <div>
 
@@ -92,9 +159,7 @@ md:grid-cols-3">
 
           <div className="flex items-center gap-3">
 
-            <Tags
-              className="text-[#F6BF1C]"
-            />
+            <Tags className="text-[#F6BF1C]" />
 
             <div>
 
@@ -116,9 +181,7 @@ md:grid-cols-3">
 
           <div className="flex items-center gap-3">
 
-            <DollarSign
-              className="text-green-600"
-            />
+            <DollarSign className="text-green-600" />
 
             <div>
 
@@ -129,9 +192,12 @@ md:grid-cols-3">
               <p className="text-3xl font-bold">
 
                 $
+
                 {Math.round(
                   averagePrice
-                ).toLocaleString("es-CL")}
+                ).toLocaleString(
+                  "es-CL"
+                )}
 
               </p>
 
@@ -148,8 +214,13 @@ md:grid-cols-3">
       <div className="flex justify-end">
 
         <button
+
           type="button"
-          onClick={() => setOpen(true)}
+
+          onClick={() =>
+            setOpen(true)
+          }
+
           className="
             flex
             items-center
@@ -167,7 +238,9 @@ md:grid-cols-3">
             hover:bg-[#2F6FD3]
             hover:shadow-md
           "
+
         >
+
           <PackagePlus size={18} />
 
           Nuevo artículo
@@ -179,27 +252,43 @@ md:grid-cols-3">
       {/* Tabla */}
 
       <ArticleTable
+
         articles={articles}
-        onReload={loadArticles}
+
+        onReload={() => {
+
+          if (session) {
+
+            loadArticles(
+              session.company.id
+            );
+
+          }
+
+        }}
+
       />
 
       {/* Modal */}
 
       <Dialog
+
         open={open}
+
         onOpenChange={setOpen}
+
       >
 
         <DialogContent
-  className="
-    sm:max-w-2xl
-    rounded-2xl
-    border
-    border-gray-200
-    bg-white
-    shadow-2xl
-  "
->
+          className="
+            sm:max-w-2xl
+            rounded-2xl
+            border
+            border-gray-200
+            bg-white
+            shadow-2xl
+          "
+        >
 
           <DialogHeader>
 
@@ -217,10 +306,21 @@ md:grid-cols-3">
           </DialogHeader>
 
           <ArticleForm
+
             onCreated={() => {
-              loadArticles();
+
+              if (session) {
+
+                loadArticles(
+                  session.company.id
+                );
+
+              }
+
               setOpen(false);
+
             }}
+
           />
 
         </DialogContent>
@@ -228,5 +328,7 @@ md:grid-cols-3">
       </Dialog>
 
     </div>
+
   );
+
 }

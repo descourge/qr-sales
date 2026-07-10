@@ -1,13 +1,14 @@
 type DashboardFilters = {
   startDate?: Date;
   endDate?: Date;
-  category?: string;
+  categoryId?: number;
 };
 
 export function buildDashboard(
   sales: any[],
   filters?: DashboardFilters
 ) {
+
   let filteredSales = [...sales];
 
   /* ==========================
@@ -15,11 +16,13 @@ export function buildDashboard(
   ========================== */
 
   if (filters?.startDate) {
+
     filteredSales = filteredSales.filter(
-      (sale) =>
+      sale =>
         new Date(sale.createdAt) >=
         filters.startDate!
     );
+
   }
 
   /* ==========================
@@ -27,7 +30,9 @@ export function buildDashboard(
   ========================== */
 
   if (filters?.endDate) {
-    const end = new Date(filters.endDate);
+
+    const end =
+      new Date(filters.endDate);
 
     end.setHours(
       23,
@@ -37,24 +42,27 @@ export function buildDashboard(
     );
 
     filteredSales = filteredSales.filter(
-      (sale) =>
+      sale =>
         new Date(sale.createdAt) <= end
     );
+
   }
 
   /* ==========================
      Categoría
   ========================== */
 
-  if (filters?.category) {
+  if (filters?.categoryId) {
+
     filteredSales = filteredSales.filter(
-      (sale) =>
+      sale =>
         sale.details.some(
           (detail: any) =>
-            detail.article.category ===
-            filters.category
+            detail.article.categoryId ===
+            filters.categoryId
         )
     );
+
   }
 
   /* ==========================
@@ -82,20 +90,17 @@ export function buildDashboard(
 
   const itemsSold =
     filteredSales.reduce(
-      (sum, sale) => {
-        return (
-          sum +
-          sale.details.reduce(
-            (
-              detailSum: number,
-              detail: any
-            ) =>
-              detailSum +
-              detail.quantity,
-            0
-          )
-        );
-      },
+      (sum, sale) =>
+        sum +
+        sale.details.reduce(
+          (
+            detailSum: number,
+            detail: any
+          ) =>
+            detailSum +
+            detail.quantity,
+          0
+        ),
       0
     );
 
@@ -103,47 +108,60 @@ export function buildDashboard(
      Productos más vendidos
   ========================== */
 
-  const productMap = new Map<
-    number,
-    {
-      articleId: number;
-      code: string;
-      description: string;
-      category: string;
-      quantity: number;
-    }
-  >();
+  const productMap =
+    new Map<
+      number,
+      {
+        articleId: number;
+        code: string;
+        description: string;
+        category: string;
+        quantity: number;
+      }
+    >();
 
-  filteredSales.forEach((sale) => {
+  filteredSales.forEach(sale => {
+
     sale.details.forEach(
       (detail: any) => {
+
         const existing =
           productMap.get(
             detail.articleId
           );
 
         if (existing) {
+
           existing.quantity +=
             detail.quantity;
-        } else {
-          productMap.set(
-            detail.articleId,
-            {
-              articleId:
-                detail.articleId,
-              code:
-                detail.article.code,
-              description:
-                detail.article.description,
-              category:
-                detail.article.category,
-              quantity:
-                detail.quantity,
-            }
-          );
+
+          return;
+
         }
+
+        productMap.set(
+          detail.articleId,
+          {
+            articleId:
+              detail.articleId,
+
+            code:
+              detail.article.code,
+
+            description:
+              detail.article.description,
+
+            category:
+              detail.article.category.name,
+
+            quantity:
+              detail.quantity,
+          }
+        );
+
       }
     );
+
   });
 
   const topProducts =
@@ -173,11 +191,19 @@ export function buildDashboard(
       .slice(0, 10);
 
   return {
+
     salesCount,
+
     totalSales,
+
     averageSale,
+
     itemsSold,
+
     topProducts,
+
     lastSales,
+
   };
+
 }

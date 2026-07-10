@@ -19,12 +19,67 @@ import { SaleHistory } from "@/features/sales/types/sale-history";
 
 import SaleCompletedModal from "@/features/sales/components/SaleCompletedModal";
 
+import { useSession } from "@/features/auth/context/SessionProvider";
+
+import {
+  SalesHistoryFilters,
+} from "@/features/sales/services/history.service";
+
+import { format } from "date-fns";
+
+import { Button } from "@/components/ui/button";
+
+import { Calendar } from "@/components/ui/calendar";
+
+import {
+  Calendar as CalendarIcon,
+} from "lucide-react";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+import {
+  getBranches,
+  getUsers,
+} from "@/features/auth/services/auth.service";
+
+import {
+  SessionBranch,
+  SessionUser,
+} from "@/features/auth/types";
+
+import { es } from "date-fns/locale";
+
 export default function SalesHistoryPage() {
+  
   const [sales, setSales] =
     useState<SaleHistory[]>([]);
 
   const [loading, setLoading] =
     useState(true);
+
+    const [branches, setBranches] =
+  useState<SessionBranch[]>([]);
+
+  const [users, setUsers] =
+  useState<SessionUser[]>([]);
+
+    const [filters, setFilters] =
+  useState<SalesHistoryFilters>({});
+
+const [appliedFilters, setAppliedFilters] =
+  useState<SalesHistoryFilters>({});
 
   const [search, setSearch] =
     useState("");
@@ -35,20 +90,102 @@ export default function SalesHistoryPage() {
   const [open, setOpen] =
     useState(false);
 
-  useEffect(() => {
-    loadSales();
-  }, []);
+    const {
+  session,
+} = useSession();
 
-  async function loadSales() {
-    setLoading(true);
+useEffect(() => {
+
+  if (!session) {
+
+    return;
+
+  }
+
+  loadSales(
+    session.company.id
+  );
+
+  loadBranches(
+    session.company.id
+  );
+
+}, [session]);
+
+async function loadUsers(
+  companyId: number,
+  branchId: number
+) {
+
+  try {
 
     const data =
-      await getSalesHistory();
+      await getUsers(
+        companyId,
+        branchId
+      );
+
+    setUsers(data);
+
+  } catch (error) {
+
+    console.error(error);
+
+  }
+
+}
+
+async function loadSales(
+
+  companyId: number,
+
+  currentFilters = filters,
+
+) {
+
+  setLoading(true);
+
+  try {
+
+    const data =
+      await getSalesHistory(
+
+        companyId,
+
+        currentFilters,
+
+      );
 
     setSales(data);
 
+  } finally {
+
     setLoading(false);
+
   }
+
+}
+
+async function loadBranches(
+  companyId: number
+) {
+
+  try {
+
+    const data =
+      await getBranches(
+        companyId
+      );
+
+    setBranches(data);
+
+  } catch (error) {
+
+    console.error(error);
+
+  }
+
+}
 
   const filteredSales = useMemo(() => {
     const value =
@@ -72,6 +209,35 @@ export default function SalesHistoryPage() {
 
     return totalAmount / sales.length;
   }, [sales, totalAmount]);
+
+  const salesWithLocation =
+  useMemo(() => {
+
+    if (sales.length === 0) {
+
+      return 0;
+
+    }
+
+    return Math.round(
+
+      sales.filter(
+
+        sale =>
+
+          sale.latitude !== null &&
+
+          sale.longitude !== null
+
+      ).length /
+
+      sales.length *
+
+      100
+
+    );
+
+  }, [sales]);
 
   return (
     <div className="space-y-8">
@@ -105,7 +271,488 @@ export default function SalesHistoryPage() {
 
       {/* KPIs */}
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+
+  <div
+    className="
+      grid
+      gap-4
+      lg:grid-cols-[1fr_1fr_1fr_1fr_auto_auto]
+    "
+  >
+
+    {/* Fecha inicio */}
+
+    <Popover>
+
+      <PopoverTrigger asChild>
+
+        <Button
+          variant="outline"
+          data-empty={!filters.startDate}
+          className="
+            h-11
+            w-full
+            justify-start
+            text-left
+            font-normal
+            data-[empty=true]:text-muted-foreground
+          "
+        >
+
+          <CalendarIcon className="mr-2 h-4 w-4" />
+
+          {filters.startDate
+            ? format(
+                filters.startDate,
+                "dd/MM/yyyy"
+              )
+            : "Fecha inicio"}
+
+        </Button>
+
+      </PopoverTrigger>
+
+      <PopoverContent className="w-auto p-0">
+
+        <Calendar
+          mode="single"
+          selected={filters.startDate}
+          onSelect={(date) =>
+            setFilters({
+
+              ...filters,
+
+              startDate: date,
+
+            })
+          }
+        />
+
+      </PopoverContent>
+
+    </Popover>
+
+    {/* Fecha fin */}
+
+    <Popover>
+
+      <PopoverTrigger asChild>
+
+        <Button
+          variant="outline"
+          data-empty={!filters.endDate}
+          className="
+            h-11
+            w-full
+            justify-start
+            text-left
+            font-normal
+            data-[empty=true]:text-muted-foreground
+          "
+        >
+
+          <CalendarIcon className="mr-2 h-4 w-4" />
+
+          {filters.endDate
+            ? format(
+                filters.endDate,
+                "dd/MM/yyyy"
+              )
+            : "Fecha fin"}
+
+        </Button>
+
+      </PopoverTrigger>
+
+      <PopoverContent className="w-auto p-0">
+
+        <Calendar
+          mode="single"
+          selected={filters.endDate}
+          onSelect={(date) =>
+            setFilters({
+
+              ...filters,
+
+              endDate: date,
+
+            })
+          }
+        />
+
+      </PopoverContent>
+
+    </Popover>
+
+<Select
+value={
+  filters.branchId
+    ? String(filters.branchId)
+    : "0"
+}
+onValueChange={async (value) => {
+
+  const branchId =
+    value === "0"
+      ? undefined
+      : Number(value);
+
+  setFilters({
+
+    ...filters,
+
+    branchId,
+
+    userId: undefined,
+
+  });
+
+  setUsers([]);
+
+  if (
+    session &&
+    branchId
+  ) {
+
+    await loadUsers(
+
+      session.company.id,
+
+      branchId,
+
+    );
+
+  }
+
+}}
+>
+
+<SelectTrigger
+  className="
+    h-11
+    w-full
+    rounded-xl
+    border-gray-300
+    bg-white
+    px-4
+    transition-all
+    duration-200
+    hover:border-[#3C83F6]
+    focus:ring-2
+    focus:ring-[#3C83F6]/20
+    data-[state=open]:border-[#3C83F6]
+    disabled:opacity-60
+  "
+>
+
+    <SelectValue
+      placeholder="Todas las sucursales"
+    />
+
+  </SelectTrigger>
+
+<SelectContent
+  className="
+    rounded-xl
+    border-gray-200
+    min-w-[var(--radix-select-trigger-width)]
+  "
+>
+
+    <SelectItem value="0">
+
+      Todas las sucursales
+
+    </SelectItem>
+
+    {branches.map((branch) => (
+
+      <SelectItem
+        key={branch.id}
+        value={String(branch.id)}
+      >
+
+        {branch.name}
+
+      </SelectItem>
+
+    ))}
+
+  </SelectContent>
+
+</Select>
+
+<Select
+
+  value={
+    filters.userId
+      ? String(filters.userId)
+      : "0"
+  }
+
+  disabled={
+    !filters.branchId
+  }
+
+  onValueChange={(value) =>
+
+    setFilters({
+
+      ...filters,
+
+      userId:
+        value === "0"
+          ? undefined
+          : Number(value),
+
+    })
+
+  }
+
+>
+
+<SelectTrigger
+  className="
+    h-11
+    w-full
+    rounded-xl
+    border-gray-300
+    bg-white
+    px-4
+    transition-all
+    duration-200
+    hover:border-[#3C83F6]
+    focus:ring-2
+    focus:ring-[#3C83F6]/20
+    data-[state=open]:border-[#3C83F6]
+    disabled:opacity-60
+  "
+>
+
+    <SelectValue
+      placeholder="Todos los vendedores"
+    />
+
+  </SelectTrigger>
+
+<SelectContent
+  className="
+    rounded-xl
+    border-gray-200
+    min-w-[var(--radix-select-trigger-width)]
+  "
+>
+
+    <SelectItem value="0">
+
+      Todos los vendedores
+
+    </SelectItem>
+
+    {users.map(user => (
+
+      <SelectItem
+
+        key={user.id}
+
+        value={String(user.id)}
+
+      >
+
+        {user.name}
+
+      </SelectItem>
+
+    ))}
+
+  </SelectContent>
+
+</Select>
+
+    <Button
+
+      onClick={() => {
+
+        if (!session) {
+
+          return;
+
+        }
+
+        setAppliedFilters(filters);
+
+        loadSales(
+
+          session.company.id,
+
+          filters,
+
+        );
+
+      }}
+
+    >
+
+      Aplicar filtros
+
+    </Button>
+
+    <Button
+
+      variant="outline"
+
+      onClick={() => {
+
+        const empty = {};
+
+setUsers([]);
+
+setFilters(empty);
+
+setAppliedFilters(empty);
+
+        if (session) {
+
+          loadSales(
+
+            session.company.id,
+
+            empty,
+
+          );
+
+        }
+
+      }}
+
+    >
+
+      Limpiar
+
+    </Button>
+
+  </div>
+
+</div>
+
+<div
+  key={JSON.stringify(appliedFilters)}
+  className="
+    inline-flex
+    max-w-fit
+    animate-filter-change
+    rounded-xl
+    border
+    border-blue-200
+    bg-blue-50
+    px-5
+    py-3
+    shadow-sm
+  "
+>
+
+  <div className="flex flex-col">
+
+    <span className="text-sm font-semibold text-blue-700">
+
+      Mostrando información
+
+    </span>
+
+<span className="text-sm text-slate-600">
+
+  {appliedFilters.startDate ||
+  appliedFilters.endDate ? (
+
+    <>
+
+      {appliedFilters.startDate
+        ? format(
+            appliedFilters.startDate,
+            "dd/MM/yyyy"
+          )
+        : "Inicio"}
+
+      {" — "}
+
+      {appliedFilters.endDate
+        ? format(
+            appliedFilters.endDate,
+            "dd/MM/yyyy"
+          )
+        : "Hoy"}
+
+    </>
+
+  ) : (
+
+    "Todas las ventas"
+
+  )}
+
+  {appliedFilters.branchId && (
+
+    <>
+
+      {" · "}
+
+      Sucursal:
+
+      <span className="font-semibold">
+
+        {" "}
+
+        {
+          branches.find(
+            (branch) =>
+              branch.id ===
+              appliedFilters.branchId
+          )?.name
+        }
+
+      </span>
+
+    </>
+
+  )}
+
+  {appliedFilters.userId && (
+
+  <>
+
+    {" · "}
+
+    Vendedor:
+
+    <span className="font-semibold">
+
+      {" "}
+
+      {
+        users.find(
+
+          user =>
+
+            user.id ===
+            appliedFilters.userId
+
+        )?.name
+      }
+
+    </span>
+
+  </>
+
+)}
+
+</span>
+
+  </div>
+
+</div>
+
+      <div className="grid gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
 
         <div className="rounded-2xl border bg-white p-5 shadow-sm">
 
@@ -191,6 +838,32 @@ export default function SalesHistoryPage() {
 
         </div>
 
+        <div className="rounded-2xl border bg-white p-5 shadow-sm">
+
+  <div className="flex items-center gap-3">
+
+    <MapPin className="text-green-600" />
+
+    <div>
+
+      <p className="text-sm text-slate-500">
+
+        Con ubicación
+
+      </p>
+
+      <p className="text-3xl font-bold">
+
+        {salesWithLocation}%
+
+      </p>
+
+    </div>
+
+  </div>
+
+</div>
+
       </div>
 
       {/* Buscador */}
@@ -248,37 +921,41 @@ export default function SalesHistoryPage() {
         "
       >
 
-        <table className="min-w-[920px] w-full">
+        <table className="min-w-[1100px] w-full">
 
           <thead className="bg-slate-50">
 
             <tr>
 
-              <th className="px-5 py-4 text-center text-sm font-semibold">
-                Venta
-              </th>
+  <th className="px-5 py-4 text-center text-sm font-semibold">
+    Venta
+  </th>
 
-              <th className="px-5 py-4 text-center text-sm font-semibold">
-                Fecha
-              </th>
+  <th className="px-5 py-4 text-center text-sm font-semibold">
+    Fecha
+  </th>
 
-              <th className="px-5 py-4 text-center text-sm font-semibold">
-                Productos
-              </th>
+  <th className="px-5 py-4 text-left text-sm font-semibold">
+    Vendedor
+  </th>
 
-              <th className="px-5 py-4 text-right text-sm font-semibold">
-                Total
-              </th>
+  <th className="px-5 py-4 text-center text-sm font-semibold">
+    Productos
+  </th>
 
-              <th className="px-5 py-4 text-center text-sm font-semibold">
-                GPS
-              </th>
+  <th className="px-5 py-4 text-right text-sm font-semibold">
+    Total
+  </th>
 
-              <th className="px-5 py-4 text-center text-sm font-semibold">
-                Acciones
-              </th>
+  <th className="px-5 py-4 text-center text-sm font-semibold">
+    GPS
+  </th>
 
-            </tr>
+  <th className="px-5 py-4 text-center text-sm font-semibold">
+    Acciones
+  </th>
+
+</tr>
 
           </thead>
 
@@ -291,7 +968,7 @@ export default function SalesHistoryPage() {
                 <tr key={index}>
 
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="p-4"
                   >
 
@@ -333,36 +1010,100 @@ export default function SalesHistoryPage() {
 
             ) : (
 
-              filteredSales.map((sale) => (
+filteredSales.map((sale) => {
 
-                <tr
-                  key={sale.id}
-                  className="
-                    border-t
-                    transition-colors
-                    hover:bg-slate-50
-                  "
-                >
+  const totalProducts =
+    sale.details.reduce(
+      (sum, detail) =>
+        sum + detail.quantity,
+      0
+    );
 
-                  <td className="px-5 py-4 text-center font-semibold">
+  return (
 
-                    #{sale.id}
+    <tr
+      key={sale.id}
+      className="
+        border-t
+        transition-colors
+        hover:bg-slate-50
+      "
+    >
 
-                  </td>
+<td className="px-5 py-4 text-center font-semibold">
 
-                  <td className="px-5 py-4 text-center">
+  #{sale.id}
 
-                    {new Date(
-                      sale.createdAt
-                    ).toLocaleString("es-CL")}
+</td>
 
-                  </td>
+<td className="px-5 py-4 text-center">
 
-                  <td className="px-5 py-4 text-center">
+  <div>
 
-                    {sale.details.length}
+    <div className="font-medium">
 
-                  </td>
+      {format(
+        new Date(sale.createdAt),
+        "dd MMM yyyy",
+        {
+          locale: es,
+        }
+      )}
+
+    </div>
+
+    <div className="text-xs text-slate-500">
+
+      {format(
+        new Date(sale.createdAt),
+        "HH:mm"
+      )}
+
+    </div>
+
+  </div>
+
+</td>
+
+<td className="px-5 py-4">
+
+  <div className="flex flex-col">
+
+    <span className="font-medium">
+
+      {sale.user.name}
+
+    </span>
+
+    <span className="text-xs text-slate-500">
+
+      {sale.branch.name}
+
+    </span>
+
+  </div>
+
+</td>
+
+<td className="px-5 py-4 text-center">
+
+  <div className="flex flex-col items-center">
+
+    <span className="text-lg font-semibold">
+
+      {totalProducts}
+
+    </span>
+
+    <span className="text-xs text-slate-500">
+
+      {sale.details.length} tipos
+
+    </span>
+
+  </div>
+
+</td>
 
                   <td
                     className="
@@ -458,9 +1199,11 @@ export default function SalesHistoryPage() {
 
                   </td>
 
-                </tr>
+    </tr>
 
-              ))
+  );
+
+})
 
             )}
 

@@ -154,42 +154,102 @@ export async function getPendingSalesCount() {
 =========================================== */
 
 export async function saveArticles(
+  companyId: number,
   articles: Article[]
 ) {
-  const db = await getDatabase();
 
-  const tx = db.transaction(
-    "articles",
-    "readwrite"
-  );
+  const db =
+    await getDatabase();
 
-  await tx.objectStore("articles").clear();
+  const tx =
+    db.transaction(
+      "articles",
+      "readwrite"
+    );
+
+  const store =
+    tx.objectStore("articles");
+
+  const current =
+    await store.getAll();
+
+  for (const article of current) {
+
+    if (
+      article.companyId ===
+      companyId
+    ) {
+
+      await store.delete(
+        article.id
+      );
+
+    }
+
+  }
 
   for (const article of articles) {
-    await tx.objectStore("articles").put(article);
+
+    await store.put(article);
+
   }
 
   await tx.done;
+
 }
 
-export async function getOfflineArticles() {
-  const db = await getDatabase();
+export async function getOfflineArticles(
+  companyId: number
+) {
 
-  return db.getAll("articles");
+  const db =
+    await getDatabase();
+
+  const articles =
+    await db.getAll(
+      "articles"
+    );
+
+  return articles.filter(
+
+    article =>
+
+      article.companyId ===
+      companyId
+
+  );
+
 }
 
 export async function getOfflineArticleByCode(
+  companyId: number,
   code: string
 ) {
-  const db = await getDatabase();
+
+  const db =
+    await getDatabase();
 
   const articles =
-    await db.getAll("articles");
+    await db.getAll(
+      "articles"
+    );
 
   return (
+
     articles.find(
-      (article) =>
-        article.code === code
-    ) ?? null
+
+      article =>
+
+        article.companyId ===
+          companyId &&
+
+        article.code ===
+          code
+
+    ) ??
+
+    null
+
   );
+
 }

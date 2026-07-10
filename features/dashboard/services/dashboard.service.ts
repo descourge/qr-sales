@@ -9,15 +9,21 @@ import {
 export type DashboardFilters = {
   startDate?: Date;
   endDate?: Date;
-  category?: string;
+  categoryId?: number;
 };
 
 export async function getDashboard(
+  companyId: number,
   filters?: DashboardFilters
 ) {
 
   const params =
     new URLSearchParams();
+
+  params.set(
+    "companyId",
+    String(companyId)
+  );
 
   if (filters?.startDate) {
 
@@ -37,21 +43,17 @@ export async function getDashboard(
 
   }
 
-  if (filters?.category) {
+  if (filters?.categoryId) {
 
     params.set(
-      "category",
-      filters.category
+      "categoryId",
+      String(filters.categoryId)
     );
 
   }
 
   const url =
-    `/api/dashboard${
-      params.toString()
-        ? `?${params.toString()}`
-        : ""
-    }`;
+    `/api/dashboard?${params.toString()}`;
 
   /* ==========================
      OFFLINE
@@ -79,7 +81,9 @@ export async function getDashboard(
       await fetch(url);
 
     if (!response.ok) {
+
       throw new Error();
+
     }
 
     return await response.json();

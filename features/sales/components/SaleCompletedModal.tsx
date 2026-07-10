@@ -16,7 +16,7 @@ type Props = {
   total: number;
   hasLocation: boolean;
   latitude?: string | number | null;
-  longitude?: string | number | null;
+  longitude?: string | number |null;
   items: SaleItem[];
   onClose: () => void;
   buttonText?: string;
@@ -34,16 +34,55 @@ export default function SaleCompletedModal({
   onClose,
   buttonText = "Cerrar",
 }: Props) {
-  if (!open) return null;
+
+  if (!open) {
+
+    return null;
+
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
 
-      <div className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+    <div
+      className="
+        fixed
+        inset-0
+        z-50
+        flex
+        items-center
+        justify-center
+        bg-black/60
+        p-4
+      "
+    >
+
+      <div
+        className="
+          flex
+          w-full
+          max-w-3xl
+          max-h-[90vh]
+          flex-col
+          overflow-hidden
+          rounded-2xl
+          bg-white
+          shadow-2xl
+        "
+      >
 
         {/* Encabezado */}
 
-        <div className="bg-green-600 px-8 py-7 text-white">
+        <div
+          className="
+            shrink-0
+            bg-green-600
+            px-6
+            py-6
+            text-white
+            sm:px-8
+            sm:py-7
+          "
+        >
 
           <div className="flex items-center gap-3">
 
@@ -51,7 +90,7 @@ export default function SaleCompletedModal({
 
             <div>
 
-              <h2 className="text-3xl font-bold">
+              <h2 className="text-2xl font-bold sm:text-3xl">
 
                 Venta registrada
 
@@ -87,111 +126,240 @@ export default function SaleCompletedModal({
 
         </div>
 
-        {/* Cuerpo */}
+        {/* Contenido */}
 
-        <div className="space-y-6 p-8">
+        <div
+          className="
+            flex
+            flex-1
+            flex-col
+            overflow-hidden
+            p-6
+            sm:p-8
+          "
+        >
 
-          <table className="min-w-[850px] w-full">
+          {/* ===================================
+              LISTADO (ÚNICA ZONA CON SCROLL)
+          =================================== */}
 
-            <thead>
+          <div
+            className="
+              flex-1
+              overflow-y-auto
+              pr-1
+              md:pr-2
+            "
+          >
 
-              <tr className="border-b">
+            {/* Escritorio */}
 
-                <th className="pb-3 text-left">
+            <div className="hidden md:block">
 
-                  Código
+              <table className="w-full">
 
-                </th>
+                <thead>
 
-                <th className="pb-3 text-left">
+                  <tr className="border-b">
 
-                  Producto
+                    <th className="pb-3 text-left">
 
-                </th>
+                      Código
 
-                <th className="pb-3 text-center">
+                    </th>
 
-                  Cant.
+                    <th className="pb-3 text-left">
 
-                </th>
+                      Producto
 
-                <th className="pb-3 text-right">
+                    </th>
 
-                  Precio
+                    <th className="pb-3 text-center">
 
-                </th>
+                      Cant.
 
-                <th className="pb-3 text-right">
+                    </th>
 
-                  Subtotal
+                    <th className="pb-3 text-right">
 
-                </th>
+                      Precio
 
-              </tr>
+                    </th>
 
-            </thead>
+                    <th className="pb-3 text-right">
 
-            <tbody>
+                      Subtotal
+
+                    </th>
+
+                  </tr>
+
+                </thead>
+
+                <tbody>
+
+                  {items.map((item) => (
+
+                    <tr
+                      key={item.articleId}
+                      className="border-b last:border-0"
+                    >
+
+                      <td className="py-3 font-mono">
+
+                        {item.code}
+
+                      </td>
+
+                      <td className="font-medium">
+
+                        {item.description}
+
+                      </td>
+
+                      <td className="text-center">
+
+                        {item.quantity}
+
+                      </td>
+
+                      <td className="text-right">
+
+                        $
+                        {item.unitPrice.toLocaleString("es-CL")}
+
+                      </td>
+
+                      <td className="text-right font-semibold text-[#3C83F6]">
+
+                        $
+                        {item.subtotal.toLocaleString("es-CL")}
+
+                      </td>
+
+                    </tr>
+
+                  ))}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+            {/* Móvil */}
+
+            <div className="space-y-3 md:hidden">
 
               {items.map((item) => (
 
-                <tr
+                <div
                   key={item.articleId}
-                  className="border-b last:border-0"
+                  className="
+                    rounded-xl
+                    border
+                    border-gray-200
+                    p-4
+                  "
                 >
 
-                  <td className="py-3 font-mono">
+                  <p className="font-mono font-semibold">
 
                     {item.code}
 
-                  </td>
+                  </p>
 
-                  <td className="font-medium">
+                  <p className="mt-1 font-medium text-[#333333]">
 
                     {item.description}
 
-                  </td>
+                  </p>
 
-                  <td className="text-center">
+                  <div
+                    className="
+                      mt-4
+                      grid
+                      grid-cols-2
+                      gap-y-2
+                      text-sm
+                    "
+                  >
 
-                    {item.quantity}
+                    <span className="text-slate-500">
 
-                  </td>
+                      Cantidad
 
-                  <td className="text-right">
+                    </span>
 
-                    $
-                    {item.unitPrice.toLocaleString("es-CL")}
+                    <span className="text-right">
 
-                  </td>
+                      {item.quantity}
 
-                  <td className="text-right font-semibold text-[#3C83F6]">
+                    </span>
 
-                    $
-                    {item.subtotal.toLocaleString("es-CL")}
+                    <span className="text-slate-500">
 
-                  </td>
+                      Precio
 
-                </tr>
+                    </span>
+
+                    <span className="text-right">
+
+                      $
+                      {item.unitPrice.toLocaleString("es-CL")}
+
+                    </span>
+
+                    <span className="font-medium">
+
+                      Subtotal
+
+                    </span>
+
+                    <span
+                      className="
+                        text-right
+                        font-semibold
+                        text-[#3C83F6]
+                      "
+                    >
+
+                      $
+                      {item.subtotal.toLocaleString("es-CL")}
+
+                    </span>
+
+                  </div>
+
+                </div>
 
               ))}
 
-            </tbody>
+            </div>
 
-          </table>
+          </div>
 
           {/* Total */}
 
-          <div className="border-t pt-6">
+          <div
+            className="
+              mt-6
+              shrink-0
+              border-t
+              pt-6
+            "
+          >
 
-            <div className="
-flex
-flex-col
-gap-4
-sm:flex-row
-sm:items-center
-sm:justify-between
-">
+            <div
+              className="
+                flex
+                flex-col
+                gap-4
+                sm:flex-row
+                sm:items-center
+                sm:justify-between
+              "
+            >
 
               <span className="text-xl font-semibold">
 
@@ -212,31 +380,43 @@ sm:justify-between
 
           {/* GPS */}
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          <div
+            className="
+              mt-6
+              shrink-0
+              rounded-2xl
+              border
+              border-slate-200
+              bg-slate-50
+              p-5
+            "
+          >
 
-            <div className="
-flex
-flex-col
-gap-4
-sm:flex-row
-sm:items-center
-sm:justify-between
-">
+            <div
+              className="
+                flex
+                flex-col
+                gap-4
+                sm:flex-row
+                sm:items-center
+                sm:justify-between
+              "
+            >
 
               <div className="flex items-start gap-3">
 
                 {hasLocation ? (
 
                   <MapPin
-                    className="mt-0.5 text-green-600"
                     size={22}
+                    className="mt-0.5 text-green-600"
                   />
 
                 ) : (
 
                   <MapPinOff
-                    className="mt-0.5 text-slate-400"
                     size={22}
+                    className="mt-0.5 text-slate-400"
                   />
 
                 )}
@@ -262,42 +442,43 @@ sm:justify-between
               </div>
 
               {hasLocation &&
-              latitude != null &&
-              longitude != null && (
+                latitude != null &&
+                longitude != null && (
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    window.open(
-                      `https://www.google.com/maps?q=${latitude},${longitude}`,
-                      "_blank"
-                    )
-                  }
-                  className="
-                    inline-flex
-                    items-center
-                    gap-2
-                    rounded-xl
-                    bg-[#3C83F6]
-                    px-4
-                    py-2.5
-                    text-sm
-                    font-medium
-                    text-white
-                    transition-all
-                    duration-200
-                    hover:-translate-y-0.5
-                    hover:bg-[#2F6FD3]
-                  "
-                >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      window.open(
+                        `https://www.google.com/maps?q=${latitude},${longitude}`,
+                        "_blank"
+                      )
+                    }
+                    className="
+                      inline-flex
+                      items-center
+                      justify-center
+                      gap-2
+                      rounded-xl
+                      bg-[#3C83F6]
+                      px-4
+                      py-2.5
+                      text-sm
+                      font-medium
+                      text-white
+                      transition-all
+                      duration-200
+                      hover:-translate-y-0.5
+                      hover:bg-[#2F6FD3]
+                    "
+                  >
 
-                  <ExternalLink size={16} />
+                    <ExternalLink size={16} />
 
-                  Ver mapa
+                    Ver mapa
 
-                </button>
+                  </button>
 
-              )}
+                )}
 
             </div>
 
@@ -307,12 +488,22 @@ sm:justify-between
 
         {/* Pie */}
 
-        <div className="flex justify-center border-t bg-slate-50 px-8 py-5">
+        <div
+          className="
+            shrink-0
+            border-t
+            bg-slate-50
+            px-6
+            py-5
+            sm:px-8
+          "
+        >
 
           <button
             type="button"
             onClick={onClose}
             className="
+              w-full
               rounded-xl
               bg-green-600
               px-8
@@ -323,6 +514,7 @@ sm:justify-between
               duration-200
               hover:-translate-y-0.5
               hover:bg-green-700
+              sm:w-auto
             "
           >
 
@@ -335,5 +527,7 @@ sm:justify-between
       </div>
 
     </div>
+
   );
+
 }

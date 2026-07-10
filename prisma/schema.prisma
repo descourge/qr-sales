@@ -8,44 +8,114 @@ datasource db {
 }
 
 model Article {
-  id          Int      @id @default(autoincrement())
-  code        String   @unique
+  id          Int          @id @default(autoincrement())
+  code        String
   description String
-  category    String
   unitPrice   Decimal
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  categoryId  Int
+  companyId   Int
+  category    Category     @relation(fields: [categoryId], references: [id])
+  company     Company      @relation(fields: [companyId], references: [id])
+  sales       SaleDetail[]
 
-  sales SaleDetail[]
+  @@unique([companyId, code])
 }
 
 model Sale {
-  id          Int          @id @default(autoincrement())
-
-  createdAt   DateTime     @default(now())
-
-  latitude    Decimal?
-
-  longitude   Decimal?
-
-  total       Decimal
-
-  details     SaleDetail[]
+  id        Int          @id @default(autoincrement())
+  createdAt DateTime     @default(now())
+  latitude  Decimal?
+  longitude Decimal?
+  total     Decimal
+  branchId  Int?
+  companyId Int
+  userId    Int?
+  branch    Branch?      @relation(fields: [branchId], references: [id])
+  company   Company      @relation(fields: [companyId], references: [id])
+  user      User?        @relation(fields: [userId], references: [id])
+  details   SaleDetail[]
 }
 
 model SaleDetail {
-  id          Int      @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
+  saleId    Int
+  articleId Int
+  quantity  Int
+  unitPrice Decimal
+  subtotal  Decimal
+  article   Article @relation(fields: [articleId], references: [id])
+  sale      Sale    @relation(fields: [saleId], references: [id])
+}
 
-  saleId      Int
-  articleId   Int
+model Company {
+  id         Int        @id @default(autoincrement())
+  name       String
+  logoUrl    String?
+  theme      Theme      @default(DEFAULT)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  articles   Article[]
+  branches   Branch[]
+  categories Category[]
+  sales      Sale[]
+  users      User[]
+}
 
-  quantity    Int
+model Branch {
+  id        Int      @id @default(autoincrement())
+  companyId Int
+  name      String
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+  company   Company  @relation(fields: [companyId], references: [id])
+  sales     Sale[]
+  users     User[]
+}
 
-  unitPrice   Decimal
+model Category {
+  id        Int       @id @default(autoincrement())
+  companyId Int
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  color     String?   @default("#3C83F6")
+  articles  Article[]
+  company   Company   @relation(fields: [companyId], references: [id])
 
-  subtotal    Decimal
+  @@unique([companyId, name])
+}
 
-  sale        Sale     @relation(fields: [saleId], references: [id])
+model User {
+  id        Int      @id @default(autoincrement())
+  companyId Int
+  branchId  Int?
+  name      String
+  email     String
+  role      Role
+  theme     Theme?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sales     Sale[]
+  branch    Branch?  @relation(fields: [branchId], references: [id])
+  company   Company  @relation(fields: [companyId], references: [id])
 
-  article     Article  @relation(fields: [articleId], references: [id])
+  @@unique([companyId, email])
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  MANAGER
+  CASHIER
+}
+
+enum Theme {
+  DEFAULT
+  DARK
+  GREEN
+  PURPLE
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+
 import {
   ShoppingCart,
   DollarSign,
@@ -33,41 +34,118 @@ import {
 
 import { format } from "date-fns";
 
+import { useSession } from "@/features/auth/context/SessionProvider";
+
+import {
+
+  getCategories,
+
+} from "@/features/categories/services/category.service";
+
 export default function DashboardPage() {
   const [dashboard, setDashboard] =
     useState<any>(null);
 
-    const [filters, setFilters] =
-  useState<{
-    startDate?: Date;
-    endDate?: Date;
-    category?: string;
-  }>({});
+    const {
+  session,
+} = useSession();
 
-  const [appliedFilters, setAppliedFilters] = useState<{
+const [filters, setFilters] = useState<{
   startDate?: Date;
   endDate?: Date;
-  category?: string;
+  categoryId?: number;
 }>({});
 
-const [categories, setCategories] =
-  useState<string[]>([]);
+const [appliedFilters, setAppliedFilters] = useState<{
+  startDate?: Date;
+  endDate?: Date;
+  categoryId?: number;
+}>({});
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
+type Category = {
+
+  id: number;
+
+  name: string;
+
+  color: string | null;
+
+};
+
+const [
+
+  categories,
+
+  setCategories,
+
+] = useState<Category[]>([]);
+
+async function loadCategories(
+  companyId: number
+) {
+
+  const data =
+    await getCategories(
+      companyId
+    );
+
+  setCategories(data);
+
+}
+
+const appliedCategory =
+  categories.find(
+
+    category =>
+
+      category.id ===
+      appliedFilters.categoryId
+
+  );
+
+useEffect(() => {
+
+  if (!session) {
+
+    return;
+
+  }
+
+  loadCategories(
+    session.company.id
+  );
+
+  loadDashboard(
+    session.company.id
+  );
+
+}, [session]);
 
 async function loadDashboard(
+
+  companyId: number,
+
   currentFilters = filters
+
 ) {
+
   const data =
-    await getDashboard(currentFilters);
+    await getDashboard(
+
+      companyId,
+
+      currentFilters
+
+    );
 
   if (!data) {
+
     return;
+
   }
 
   setDashboard(data);
+
 }
 
   if (!dashboard) {
@@ -227,13 +305,18 @@ async function loadDashboard(
     {/* Categoría */}
 
     <Select
-      value={filters.category}
-      onValueChange={(value) =>
-        setFilters({
-          ...filters,
-          category: value,
-        })
-      }
+      value={
+  filters.categoryId
+    ? String(filters.categoryId)
+    : undefined
+}
+
+onValueChange={(value) =>
+  setFilters({
+    ...filters,
+    categoryId: Number(value),
+  })
+}
     >
 
       <SelectTrigger
@@ -254,18 +337,21 @@ async function loadDashboard(
             Categorías
           </SelectLabel>
 
-          {categories.map(category => (
+{categories.map(category => (
 
-            <SelectItem
-                key={category}
-                value={category}
-            >
+  <SelectItem
 
-                {category}
+    key={category.id}
 
-            </SelectItem>
+    value={String(category.id)}
 
-        ))}
+  >
+
+    {category.name}
+
+  </SelectItem>
+
+))}
 
         </SelectGroup>
 
@@ -275,31 +361,64 @@ async function loadDashboard(
 
     {/* Aplicar */}
 
-    <Button
+<Button
   onClick={() => {
+
+    if (!session) {
+
+      return;
+
+    }
+
     setAppliedFilters(filters);
-    loadDashboard(filters);
+
+    loadDashboard(
+
+      session.company.id,
+
+      filters
+
+    );
+
   }}
 >
+
   Aplicar filtros
+
 </Button>
 
     {/* Limpiar */}
 
-    <Button
+<Button
+
   variant="outline"
+
   onClick={() => {
 
     const empty = {};
 
     setFilters(empty);
+
     setAppliedFilters(empty);
 
-    loadDashboard(empty);
+    if (session) {
+
+      loadDashboard(
+
+        session.company.id,
+
+        empty
+
+      );
+
+    }
 
   }}
+
 >
+
   Limpiar
+
 </Button>
 
   </div>
@@ -345,15 +464,24 @@ async function loadDashboard(
 ) : (
 "Ventas totales"
 )}
-      {appliedFilters.category && (
+{appliedCategory && (
+
   <>
+
     {" · "}
+
     Categoría:
+
     <span className="font-semibold">
+
       {" "}
-      {appliedFilters.category}
+
+      {appliedCategory.name}
+
     </span>
+
   </>
+
 )}
 
     </span>
@@ -378,7 +506,7 @@ async function loadDashboard(
 
 {appliedFilters.startDate ||
  appliedFilters.endDate ||
- appliedFilters.category
+ appliedFilters.categoryId
   ? "Ventas filtradas"
   : "Ventas totales"}
 

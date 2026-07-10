@@ -1,54 +1,195 @@
-import { NextRequest, NextResponse } from "next/server";
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
+
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
-  const articles = await prisma.article.findMany({
-    orderBy: {
-        code: "asc",
-    },
-  });
+export async function GET(
+  request: NextRequest
+) {
 
-  return NextResponse.json(articles);
-}
-
-export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
 
-    // Verificar si ya existe un artículo con el mismo código
-    const exists = await prisma.article.findUnique({
-      where: {
-        code: body.code,
-      },
-    });
+    const { searchParams } =
+      new URL(request.url);
 
-    if (exists) {
+    const companyId =
+      Number(
+        searchParams.get("companyId")
+      );
+
+    if (!companyId) {
+
       return NextResponse.json(
         {
-          message: "Ya existe un artículo con ese código.",
+          message:
+            "companyId es obligatorio.",
         },
         {
           status: 400,
         }
       );
+
     }
 
-    const article = await prisma.article.create({
-      data: {
-        code: body.code,
-        description: body.description,
-        category: body.category,
-        unitPrice: Number(body.unitPrice),
-      },
-    });
+    const articles =
+      await prisma.article.findMany({
 
-    return NextResponse.json(article, { status: 201 });
+        where: {
+
+          companyId,
+
+        },
+
+        include: {
+
+          category: true,
+
+        },
+
+        orderBy: {
+
+          code: "asc",
+
+        },
+
+      });
+
+    return NextResponse.json(
+      articles
+    );
+
   } catch (error) {
+
     console.error(error);
 
     return NextResponse.json(
-      { message: "No fue posible crear el artículo." },
-      { status: 500 }
+
+      {
+
+        message:
+          "No fue posible obtener los artículos.",
+
+      },
+
+      {
+
+        status: 500,
+
+      }
+
     );
+
   }
+
+}
+
+export async function POST(
+  request: NextRequest
+) {
+
+  try {
+
+    const body =
+      await request.json();
+
+    const exists =
+      await prisma.article.findFirst({
+
+        where: {
+
+          companyId:
+            body.companyId,
+
+          code:
+            body.code,
+
+        },
+
+      });
+
+    if (exists) {
+
+      return NextResponse.json(
+
+        {
+
+          message:
+            "Ya existe un artículo con ese código.",
+
+        },
+
+        {
+
+          status: 400,
+
+        }
+
+      );
+
+    }
+
+    const article =
+      await prisma.article.create({
+
+        data: {
+
+          companyId:
+            body.companyId,
+
+          categoryId:
+            body.categoryId,
+
+          code:
+            body.code,
+
+          description:
+            body.description,
+
+          unitPrice:
+            Number(
+              body.unitPrice
+            ),
+
+        },
+
+        include: {
+
+          category: true,
+
+        },
+
+      });
+
+    return NextResponse.json(
+      article,
+      {
+        status: 201,
+      }
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    return NextResponse.json(
+
+      {
+
+        message:
+          "No fue posible crear el artículo.",
+
+      },
+
+      {
+
+        status: 500,
+
+      }
+
+    );
+
+  }
+
 }

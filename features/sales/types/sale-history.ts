@@ -4,11 +4,29 @@ export interface SaleHistory {
 
   createdAt: string;
 
-  total: string;
+  total: number;
 
-  latitude: string | null;
+  latitude: number | null;
 
-  longitude: string | null;
+  longitude: number | null;
+
+  branch: {
+
+    id: number;
+
+    name: string;
+
+  };
+
+  user: {
+
+    id: number;
+
+    name: string;
+
+    role: string;
+
+  };
 
   details: {
 
@@ -16,9 +34,9 @@ export interface SaleHistory {
 
     quantity: number;
 
-    unitPrice: string;
+    unitPrice: number;
 
-    subtotal: string;
+    subtotal: number;
 
     article: {
 

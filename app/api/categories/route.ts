@@ -1,34 +1,70 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(
+  request: NextRequest
+) {
+
   try {
 
+    const { searchParams } =
+      new URL(request.url);
+
+    const companyId =
+      Number(
+        searchParams.get(
+          "companyId"
+        )
+      );
+
+    if (!companyId) {
+
+      return NextResponse.json(
+        {
+          message:
+            "companyId es obligatorio.",
+        },
+        {
+          status: 400,
+        }
+      );
+
+    }
+
     const categories =
-      await prisma.article.findMany({
+      await prisma.category.findMany({
 
-        distinct: ["category"],
+        where: {
 
-        select: {
-          category: true,
+          companyId,
+
         },
 
         orderBy: {
-          category: "asc",
+
+          name: "asc",
+
         },
 
       });
 
     return NextResponse.json(
-      categories.map(item => item.category)
+      categories
     );
 
   } catch {
 
     return NextResponse.json(
-      [],
-      { status: 500 }
+      {
+        message:
+          "No fue posible obtener las categorías.",
+      },
+      {
+        status: 500,
+      }
     );
 
   }
+
 }

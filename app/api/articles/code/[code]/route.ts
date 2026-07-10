@@ -1,28 +1,104 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
-    request: Request,
-    { params }: { params: Promise<{ code: string }> }
+  request: NextRequest,
+  {
+    params,
+  }: {
+    params: Promise<{
+      code: string;
+    }>;
+  }
 ) {
-    const { code } = await params;
 
-    const article = await prisma.article.findUnique({
-        where: {
-            code,
+  try {
+
+    const {
+      code,
+    } = await params;
+
+    const companyId =
+      Number(
+        request.nextUrl.searchParams.get(
+          "companyId"
+        )
+      );
+
+    if (!companyId) {
+
+      return NextResponse.json(
+
+        {
+          message:
+            "companyId es obligatorio.",
         },
-    });
 
-    if (!article) {
-        return NextResponse.json(
-            {
-                message: "Artículo no encontrado.",
-            },
-            {
-                status: 404,
-            }
-        );
+        {
+          status: 400,
+        }
+
+      );
+
     }
 
-    return NextResponse.json(article);
+    const article =
+      await prisma.article.findFirst({
+
+        where: {
+
+          companyId,
+
+          code,
+
+        },
+
+        include: {
+
+          category: true,
+
+        },
+
+      });
+
+    if (!article) {
+
+      return NextResponse.json(
+
+        {
+          message:
+            "Artículo no encontrado.",
+        },
+
+        {
+          status: 404,
+        }
+
+      );
+
+    }
+
+    return NextResponse.json(
+      article
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    return NextResponse.json(
+
+      {
+        message:
+          "No fue posible obtener el artículo.",
+      },
+
+      {
+        status: 500,
+      }
+
+    );
+
+  }
+
 }

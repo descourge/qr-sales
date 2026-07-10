@@ -31,6 +31,8 @@ import {
   Package,
 } from "lucide-react";
 
+import { useSession } from "@/features/auth/context/SessionProvider";
+
 
 export default function SalesPage() {
   const [article, setArticle] = useState<Article | null>(null);
@@ -41,6 +43,10 @@ export default function SalesPage() {
   const [cart, setCart] = useState<SaleItem[]>([]);
 
   const [scannerKey, setScannerKey] = useState(0);
+
+  const {
+  session,
+} = useSession();
 
   const [saleCompletedOpen, setSaleCompletedOpen] =
     useState(false);
@@ -79,7 +85,20 @@ const totalItems = cart.reduce(
     // Si ya hay un artículo pendiente, ignoramos nuevas lecturas
     if (article) return;
 
-    const result = await getArticleByCode(code);
+    if (!session) {
+
+  return;
+
+}
+
+const result =
+  await getArticleByCode(
+
+    session.company.id,
+
+    code
+
+  );
 
     if (!result) {
       setScannerKey((k) => k + 1);
@@ -235,6 +254,17 @@ async function getCurrentLocation() {
 }
 
 function handleFinishSale() {
+
+  if (!session) {
+
+  notify.error(
+    "No existe una sesión activa."
+  );
+
+  return;
+
+}
+
   if (cart.length === 0) return;
 
   setConfirmData({
@@ -255,19 +285,47 @@ async function confirmFinishSale() {
   try {
     const location = await getCurrentLocation();
 
+    if (!session) {
+
+  notify.error(
+    "No existe una sesión activa."
+  );
+
+  return;
+
+}
+
 const saleData = {
-  createdAt: new Date().toISOString(),
+
+  companyId:
+    session.company.id,
+
+  branchId:
+    session.branch?.id ?? null,
+
+  userId:
+    session.user.id,
+
+  createdAt:
+    new Date().toISOString(),
 
   total,
 
-  latitude: location.latitude,
+  latitude:
+    location.latitude,
 
-  longitude: location.longitude,
+  longitude:
+    location.longitude,
 
-  items: cart.map((item) => ({
-    articleId: item.articleId,
-    quantity: item.quantity,
-  })),
+  items: cart.map(
+    item => ({
+      articleId:
+        item.articleId,
+      quantity:
+        item.quantity,
+    })
+  ),
+
 };
 
 if (!navigator.onLine) {

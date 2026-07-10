@@ -6,9 +6,11 @@ import {
   Settings,
   History,
   Receipt,
+  FileBarChart2,
 } from "lucide-react";
 
 import { NavigationItem } from "@/shared/types/navigation";
+
 
 export const navigation: NavigationItem[] = [
   {
@@ -32,8 +34,8 @@ export const navigation: NavigationItem[] = [
   icon: Receipt,
   },
   {
-    title: "Sincronización",
-    href: "/sync",
-    icon: RefreshCcw,
-  },
+    title: "Reportes",
+    href: "/reports",
+    icon: FileBarChart2,
+  }
 ];

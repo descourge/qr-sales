@@ -1,7 +1,25 @@
 import withPWA from "next-pwa";
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+
+  images: {
+
+    remotePatterns: [
+
+      {
+
+        protocol: "https",
+
+        hostname: "api.dicebear.com",
+
+      },
+
+    ],
+
+  },
+
+};
 
 export default withPWA({
   dest: "public",

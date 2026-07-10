@@ -1,33 +1,53 @@
 import { notify } from "@/shared/lib/notify";
-import { saveArticles } from "@/shared/lib/offline-db";
+
 import {
+  saveArticles,
   getOfflineArticleByCode,
 } from "@/shared/lib/offline-db";
 
+import { Article } from "@/shared/types/article";
+
 export async function getArticleByCode(
+  companyId: number,
   code: string
-) {
+): Promise<Article | null> {
+
   try {
 
-    // Si no hay conexión, consultar directamente la copia local
+    /* ==========================
+       OFFLINE
+    ========================== */
+
     if (!navigator.onLine) {
 
       const article =
-        await getOfflineArticleByCode(code);
+        await getOfflineArticleByCode(
+          companyId,
+          code
+        );
 
       if (!article) {
+
         notify.warning(
           "El artículo no existe en la base de datos local."
         );
+
       }
 
       return article;
+
     }
 
-    // Consultar la API
-    const response = await fetch(
-      `/api/articles/code/${code}`
-    );
+    /* ==========================
+       ONLINE
+    ========================== */
+
+    const response =
+      await fetch(
+
+        `/api/articles/code/${code}?companyId=${companyId}`
+
+      );
 
     if (response.status === 404) {
 
@@ -36,6 +56,7 @@ export async function getArticleByCode(
       );
 
       return null;
+
     }
 
     if (!response.ok) {
@@ -45,6 +66,7 @@ export async function getArticleByCode(
       );
 
       return null;
+
     }
 
     return await response.json();
@@ -53,13 +75,16 @@ export async function getArticleByCode(
 
     console.error(error);
 
-    // Si la API falla por cualquier motivo,
-    // intentar recuperar el artículo desde IndexedDB.
     const article =
-      await getOfflineArticleByCode(code);
+      await getOfflineArticleByCode(
+        companyId,
+        code
+      );
 
     if (article) {
+
       return article;
+
     }
 
     notify.error(
@@ -67,23 +92,48 @@ export async function getArticleByCode(
     );
 
     return null;
+
   }
+
 }
 
-export async function syncOfflineArticles() {
+export async function syncOfflineArticles(
+  companyId: number
+) {
+
   try {
-    const response = await fetch("/api/articles");
 
-    if (!response.ok) return;
+    const response =
+      await fetch(
 
-    const articles = await response.json();
+        `/api/articles?companyId=${companyId}`
 
-    await saveArticles(articles);
+      );
+
+    if (!response.ok) {
+
+      return;
+
+    }
+
+    const articles =
+      await response.json();
+
+    await saveArticles(
+      companyId,
+      articles
+    );
 
   } catch (error) {
+
     console.error(
+
       "No fue posible actualizar los artículos offline.",
+
       error
+
     );
+
   }
+
 }

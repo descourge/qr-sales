@@ -1,4 +1,12 @@
 import {
+  getOfflineSales,
+} from "@/shared/lib/offline-db";
+
+import {
+  buildReport,
+} from "@/features/reports/lib/build-report";
+
+import {
   SalesHistoryFilters,
 } from "@/features/sales/services/history.service";
 
@@ -51,11 +59,52 @@ export async function getReport(
 
   }
 
-  const response =
-    await fetch(
-      `/api/reports?${params.toString()}`
+  const url =
+    `/api/reports?${params.toString()}`;
+
+  /* ==========================
+     OFFLINE
+  ========================== */
+
+  if (!navigator.onLine) {
+
+    const sales =
+      await getOfflineSales();
+
+    return buildReport(
+      sales,
+      filters
     );
 
-  return response.json();
+  }
+
+  /* ==========================
+     ONLINE
+  ========================== */
+
+  try {
+
+    const response =
+      await fetch(url);
+
+    if (!response.ok) {
+
+      throw new Error();
+
+    }
+
+    return await response.json();
+
+  } catch {
+
+    const sales =
+      await getOfflineSales();
+
+    return buildReport(
+      sales,
+      filters
+    );
+
+  }
 
 }

@@ -11,7 +11,7 @@ async function getDatabase() {
 
   return openDB(
     "qr-sales-db",
-    6,
+    7,
     {
       upgrade(db) {
 

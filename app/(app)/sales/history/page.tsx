@@ -239,11 +239,6 @@ async function loadBranches(
 
   }, [sales]);
 
-  console.log(
-  "Offline sales:",
-  sales
-);
-
   return (
     <div className="space-y-8">
 

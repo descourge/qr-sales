@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
+
   try {
 
     const sales =
@@ -10,11 +11,23 @@ export async function GET() {
 
         include: {
 
+          branch: true,
+
+          user: true,
+
           details: {
 
             include: {
 
-              article: true,
+              article: {
+
+                include: {
+
+                  category: true,
+
+                },
+
+              },
 
             },
 
@@ -39,14 +52,22 @@ export async function GET() {
     console.error(error);
 
     return NextResponse.json(
+
       {
+
         message:
           "No fue posible obtener las ventas.",
+
       },
+
       {
+
         status: 500,
+
       }
+
     );
 
   }
+
 }

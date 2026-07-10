@@ -152,7 +152,8 @@ export function buildDashboard(
               detail.article.description,
 
             category:
-              detail.article.category.name,
+  detail.article.category?.name ??
+  "Sin categoría",
 
             quantity:
               detail.quantity,

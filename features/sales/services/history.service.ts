@@ -2,6 +2,10 @@ import {
   getOfflineSales,
 } from "@/shared/lib/offline-db";
 
+import {
+  buildSalesHistory,
+} from "@/features/sales/lib/build-sales-history";
+
 export type SalesHistoryFilters = {
 
   startDate?: Date;
@@ -66,20 +70,21 @@ export async function getSalesHistory(
 
   }
 
+  const url =
+    `/api/sales/history?${params.toString()}`;
+
   /* ==========================
      OFFLINE
   ========================== */
 
   if (!navigator.onLine) {
 
-    return filterOfflineSales(
+    const sales =
+      await getOfflineSales();
 
-      await getOfflineSales(),
-
-      companyId,
-
-      filters,
-
+    return buildSalesHistory(
+      sales,
+      filters
     );
 
   }
@@ -91,9 +96,7 @@ export async function getSalesHistory(
   try {
 
     const response =
-      await fetch(
-        `/api/sales/history?${params.toString()}`
-      );
+      await fetch(url);
 
     if (!response.ok) {
 
@@ -101,104 +104,18 @@ export async function getSalesHistory(
 
     }
 
-    return response.json();
+    return await response.json();
 
   } catch {
 
-    return filterOfflineSales(
+    const sales =
+      await getOfflineSales();
 
-      await getOfflineSales(),
-
-      companyId,
-
-      filters,
-
+    return buildSalesHistory(
+      sales,
+      filters
     );
 
   }
-
-}
-
-function filterOfflineSales(
-
-  sales: any[],
-
-  companyId: number,
-
-  filters?: SalesHistoryFilters,
-
-) {
-
-  let result =
-    sales.filter(
-
-      sale =>
-
-        sale.companyId === companyId
-
-    );
-
-  if (filters?.startDate) {
-
-    result = result.filter(
-
-      sale =>
-
-        new Date(sale.createdAt) >=
-        filters.startDate!
-
-    );
-
-  }
-
-  if (filters?.endDate) {
-
-    const end =
-      new Date(filters.endDate);
-
-    end.setHours(
-      23,
-      59,
-      59,
-      999
-    );
-
-    result = result.filter(
-
-      sale =>
-
-        new Date(sale.createdAt) <= end
-
-    );
-
-  }
-
-  if (filters?.branchId) {
-
-    result = result.filter(
-
-      sale =>
-
-        sale.branchId ===
-        filters.branchId
-
-    );
-
-  }
-
-  if (filters?.userId) {
-
-    result = result.filter(
-
-      sale =>
-
-        sale.userId ===
-        filters.userId
-
-    );
-
-  }
-
-  return result;
 
 }

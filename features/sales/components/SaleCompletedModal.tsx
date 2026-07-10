@@ -354,23 +354,17 @@ export default function SaleCompletedModal({
               className="
                 flex
                 flex-col
-                gap-4
+                gap-2
                 sm:flex-row
                 sm:items-center
                 sm:justify-between
               "
             >
 
-              <span className="text-xl font-semibold">
+              <span className="text-2x1 font-bold text-right">
 
-                Total
-
-              </span>
-
-              <span className="text-3xl font-bold text-[#3C83F6]">
-
-                $
-                {total.toLocaleString("es-CL")}
+                Total: <span className="text-[#3C83F6]">$
+                {total.toLocaleString("es-CL")}</span>
 
               </span>
 
@@ -403,7 +397,7 @@ export default function SaleCompletedModal({
               "
             >
 
-              <div className="flex items-start gap-3">
+              <div className="flex items-start">
 
                 {hasLocation ? (
 
@@ -428,14 +422,6 @@ export default function SaleCompletedModal({
                     Ubicación GPS
 
                   </h3>
-
-                  <p className="mt-1 text-sm text-slate-500">
-
-                    {hasLocation
-                      ? "La ubicación de esta venta fue registrada correctamente."
-                      : "No fue posible obtener la ubicación para esta venta."}
-
-                  </p>
 
                 </div>
 

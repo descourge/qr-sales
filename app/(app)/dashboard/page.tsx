@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select"
 
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 import { useSession } from "@/features/auth/context/SessionProvider";
 
@@ -841,11 +842,32 @@ onValueChange={(value) =>
 
                       <td className="text-center">
 
-                        {new Date(
-                          sale.createdAt
-                        ).toLocaleString("es-CL")}
+  <div>
 
-                      </td>
+    <div className="font-medium">
+
+      {format(
+        new Date(sale.createdAt),
+        "dd MMM yyyy",
+        {
+          locale: es,
+        }
+      )}
+
+    </div>
+
+    <div className="text-xs text-slate-500">
+
+      {format(
+        new Date(sale.createdAt),
+        "HH:mm"
+      )}
+
+    </div>
+
+  </div>
+
+</td>
 
                       <td className="text-right font-semibold">
 

@@ -1,31 +1,47 @@
-import { NextResponse } from "next/server";
-
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(
+  request: NextRequest
+) {
 
-  try {
+  const companyId =
+    Number(
+      request.nextUrl.searchParams.get(
+        "companyId"
+      )
+    );
 
-    const sales =
-      await prisma.sale.findMany({
+  if (!companyId) {
 
-        include: {
+    return NextResponse.json([]);
 
-          branch: true,
+  }
 
-          user: true,
+  const sales =
+    await prisma.sale.findMany({
 
-          details: {
+      where: {
 
-            include: {
+        companyId,
 
-              article: {
+      },
 
-                include: {
+      include: {
 
-                  category: true,
+        branch: true,
 
-                },
+        user: true,
+
+        details: {
+
+          include: {
+
+            article: {
+
+              include: {
+
+                category: true,
 
               },
 
@@ -35,39 +51,18 @@ export async function GET() {
 
         },
 
-        orderBy: {
+      },
 
-          createdAt: "desc",
+      orderBy: {
 
-        },
-
-      });
-
-    return NextResponse.json(
-      sales
-    );
-
-  } catch (error) {
-
-    console.error(error);
-
-    return NextResponse.json(
-
-      {
-
-        message:
-          "No fue posible obtener las ventas.",
+        createdAt: "desc",
 
       },
 
-      {
+    });
 
-        status: 500,
-
-      }
-
-    );
-
-  }
+  return NextResponse.json(
+    sales
+  );
 
 }

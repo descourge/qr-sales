@@ -2,14 +2,14 @@ import {
   saveSales,
 } from "@/shared/lib/offline-db";
 
-export async function syncOfflineSales() {
+export async function syncOfflineSales(companyId: number) {
 
   try {
 
     const response =
       await fetch(
-        "/api/sales/all"
-      );
+  `/api/sales/all?companyId=${companyId}`
+);
 
     if (!response.ok) {
 

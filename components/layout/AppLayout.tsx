@@ -74,7 +74,9 @@ useEffect(() => {
         companyId
       ),
 
-      syncOfflineSales(),
+      syncOfflineSales(
+  companyId
+),
       
       syncOfflineBranches(
         companyId

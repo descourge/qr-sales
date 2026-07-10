@@ -4,10 +4,13 @@ import { useEffect } from "react";
 
 import { synchronizeSales } from "@/features/sync/services/sync.service";
 import { notify } from "@/shared/lib/notify";
-import { syncOfflineDashboard } from "@/features/dashboard/services/dashboard.service";
 import { syncOfflineArticles } from "@/features/sales/services/article.service";
 
+import { useSession } from "@/features/auth/context/SessionProvider";
+
 export default function AutoSync() {
+
+  const { session } = useSession();
 
   useEffect(() => {
 
@@ -23,13 +26,16 @@ export default function AutoSync() {
         );
 
         window.dispatchEvent(
-        new Event("sales-synchronized")
+          new Event("sales-synchronized")
         );
 
-        await Promise.all([
-            syncOfflineArticles(),
-            syncOfflineDashboard(),
-        ]);
+        if (session) {
+
+          await syncOfflineArticles(
+            session.company.id
+          );
+
+        }
 
       }
 
@@ -52,4 +58,5 @@ export default function AutoSync() {
   }, []);
 
   return null;
+
 }

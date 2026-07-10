@@ -1,3 +1,7 @@
+import {
+  getOfflineSales,
+} from "@/shared/lib/offline-db";
+
 export type SalesHistoryFilters = {
 
   startDate?: Date;
@@ -62,19 +66,139 @@ export async function getSalesHistory(
 
   }
 
-  const response =
-    await fetch(
-      `/api/sales/history?${params.toString()}`
-    );
+  /* ==========================
+     OFFLINE
+  ========================== */
 
-  if (!response.ok) {
+  if (!navigator.onLine) {
 
-    throw new Error(
-      "No fue posible obtener las ventas."
+    return filterOfflineSales(
+
+      await getOfflineSales(),
+
+      companyId,
+
+      filters,
+
     );
 
   }
 
-  return response.json();
+  /* ==========================
+     ONLINE
+  ========================== */
+
+  try {
+
+    const response =
+      await fetch(
+        `/api/sales/history?${params.toString()}`
+      );
+
+    if (!response.ok) {
+
+      throw new Error();
+
+    }
+
+    return response.json();
+
+  } catch {
+
+    return filterOfflineSales(
+
+      await getOfflineSales(),
+
+      companyId,
+
+      filters,
+
+    );
+
+  }
+
+}
+
+function filterOfflineSales(
+
+  sales: any[],
+
+  companyId: number,
+
+  filters?: SalesHistoryFilters,
+
+) {
+
+  let result =
+    sales.filter(
+
+      sale =>
+
+        sale.companyId === companyId
+
+    );
+
+  if (filters?.startDate) {
+
+    result = result.filter(
+
+      sale =>
+
+        new Date(sale.createdAt) >=
+        filters.startDate!
+
+    );
+
+  }
+
+  if (filters?.endDate) {
+
+    const end =
+      new Date(filters.endDate);
+
+    end.setHours(
+      23,
+      59,
+      59,
+      999
+    );
+
+    result = result.filter(
+
+      sale =>
+
+        new Date(sale.createdAt) <= end
+
+    );
+
+  }
+
+  if (filters?.branchId) {
+
+    result = result.filter(
+
+      sale =>
+
+        sale.branchId ===
+        filters.branchId
+
+    );
+
+  }
+
+  if (filters?.userId) {
+
+    result = result.filter(
+
+      sale =>
+
+        sale.userId ===
+        filters.userId
+
+    );
+
+  }
+
+  return result;
 
 }

@@ -148,7 +148,7 @@ export default function AppSidebar({
           </p>
 
           <p className="mt-1 text-xs text-slate-500">
-            Versión 1.0
+            Versión 2.0
           </p>
 
           {mobile && (

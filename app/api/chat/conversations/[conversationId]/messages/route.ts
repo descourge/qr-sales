@@ -1,455 +1,191 @@
 import {
-  NextRequest,
-  NextResponse,
-} from "next/server";
-
-import {
   prisma,
 } from "@/lib/prisma";
 
 import {
-  sendChatPushNotifications,
-} from "@/features/push/services/push.service";
+  webPush,
+} from "@/features/push/lib/web-push";
 
-type RouteContext = {
-  params: Promise<{
-    conversationId: string;
-  }>;
+type ChatPushPayload = {
+
+  conversationId: number;
+
+  senderName: string;
+
+  content: string;
+
 };
 
-/* ===========================================
-   VALIDAR ACCESO
-=========================================== */
+export async function sendChatPushNotifications(
 
-async function validateConversationAccess(
-  conversationId: number,
-  companyId: number,
-  userId: number
+  receiverUserId: number,
+
+  payload: ChatPushPayload
+
 ) {
 
-  return prisma.conversation.findFirst({
-    where: {
-      id:
-        conversationId,
+  const subscriptions =
+    await prisma.pushSubscription.findMany({
 
-      companyId,
+      where: {
 
-      participants: {
-        some: {
-          userId,
-        },
+        userId:
+          receiverUserId,
+
       },
-    },
-    select: {
-      id: true,
-    },
-  });
 
-}
+    });
 
-/* ===========================================
-   OBTENER MENSAJES
-=========================================== */
+  console.log(
 
-export async function GET(
-  request: NextRequest,
-  context: RouteContext
-) {
+    `[Push] Usuario receptor ${receiverUserId}: ${subscriptions.length} suscripción(es).`
 
-  try {
+  );
 
-    const {
-      conversationId:
-        conversationIdParam,
-    } =
-      await context.params;
+  if (
+    subscriptions.length === 0
+  ) {
 
-    const conversationId =
-      Number(
-        conversationIdParam
-      );
+    console.warn(
 
-    const companyId =
-      Number(
-        request.nextUrl.searchParams.get(
-          "companyId"
-        )
-      );
+      `[Push] El usuario ${receiverUserId} no tiene dispositivos registrados.`
 
-    const userId =
-      Number(
-        request.nextUrl.searchParams.get(
-          "userId"
-        )
-      );
-
-    const afterId =
-      Number(
-        request.nextUrl.searchParams.get(
-          "afterId"
-        )
-      );
-
-    if (
-      !conversationId ||
-      !companyId ||
-      !userId
-    ) {
-
-      return NextResponse.json(
-        {
-          message:
-            "conversationId, companyId y userId son obligatorios.",
-        },
-        {
-          status: 400,
-        }
-      );
-
-    }
-
-    const conversation =
-      await validateConversationAccess(
-        conversationId,
-        companyId,
-        userId
-      );
-
-    if (!conversation) {
-
-      return NextResponse.json(
-        {
-          message:
-            "No tiene acceso a esta conversación.",
-        },
-        {
-          status: 403,
-        }
-      );
-
-    }
-
-    const messages =
-      await prisma.message.findMany({
-        where: {
-          conversationId,
-
-          ...(afterId
-            ? {
-                id: {
-                  gt: afterId,
-                },
-              }
-            : {}),
-        },
-        orderBy: {
-          id: "asc",
-        },
-        take: afterId
-          ? 100
-          : 200,
-        include: {
-          sender: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      });
-
-    return NextResponse.json(
-      messages
     );
 
-  } catch (error) {
-
-    console.error(
-      "No fue posible obtener los mensajes:",
-      error
-    );
-
-    return NextResponse.json(
-      {
-        message:
-          "No fue posible obtener los mensajes.",
-      },
-      {
-        status: 500,
-      }
-    );
+    return;
 
   }
 
-}
+  const notificationPayload =
+    JSON.stringify({
 
-/* ===========================================
-   ENVIAR MENSAJE
-=========================================== */
+      type:
+        "chat",
 
-export async function POST(
-  request: NextRequest,
-  context: RouteContext
-) {
+      title:
+        payload.senderName,
 
-  try {
+      body:
+        payload.content,
 
-    const {
+      url:
+        `/chat?conversationId=${payload.conversationId}`,
+
       conversationId:
-        conversationIdParam,
-    } =
-      await context.params;
+        payload.conversationId,
 
-    const conversationId =
-      Number(
-        conversationIdParam
-      );
+    });
 
-    const body =
-      await request.json();
+  const results =
+    await Promise.allSettled(
 
-    const companyId =
-      Number(body.companyId);
+      subscriptions.map(
 
-    const userId =
-      Number(body.userId);
+        async subscription => {
 
-    const content =
-      typeof body.content ===
-      "string"
+          try {
 
-        ? body.content.trim()
+            const result =
+              await webPush.sendNotification(
 
-        : "";
+                {
 
-    if (
-      !conversationId ||
-      !companyId ||
-      !userId ||
-      !content
-    ) {
+                  endpoint:
+                    subscription.endpoint,
 
-      return NextResponse.json(
-        {
-          message:
-            "conversationId, companyId, userId y content son obligatorios.",
-        },
-        {
-          status: 400,
-        }
-      );
+                  keys: {
 
-    }
+                    p256dh:
+                      subscription.p256dh,
 
-    if (
-      content.length > 1000
-    ) {
-
-      return NextResponse.json(
-        {
-          message:
-            "El mensaje no puede superar los 1000 caracteres.",
-        },
-        {
-          status: 400,
-        }
-      );
-
-    }
-
-    const conversation =
-      await prisma.conversation.findFirst({
-
-        where: {
-
-          id:
-            conversationId,
-
-          companyId,
-
-          participants: {
-
-            some: {
-
-              userId,
-
-            },
-
-          },
-
-        },
-
-        include: {
-
-          participants: {
-
-            select: {
-
-              userId: true,
-
-            },
-
-          },
-
-        },
-
-      });
-
-    if (!conversation) {
-
-      return NextResponse.json(
-        {
-          message:
-            "No tiene acceso a esta conversación.",
-        },
-        {
-          status: 403,
-        }
-      );
-
-    }
-
-    const receiver =
-      conversation.participants.find(
-
-        participant =>
-
-          participant.userId !==
-          userId
-
-      );
-
-    if (!receiver) {
-
-      return NextResponse.json(
-        {
-          message:
-            "No fue posible identificar al destinatario.",
-        },
-        {
-          status: 400,
-        }
-      );
-
-    }
-
-    const message =
-      await prisma.$transaction(
-
-        async transaction => {
-
-          const createdMessage =
-            await transaction.message.create({
-
-              data: {
-
-                conversationId,
-
-                senderId:
-                  userId,
-
-                content,
-
-              },
-
-              include: {
-
-                sender: {
-
-                  select: {
-
-                    id: true,
-
-                    name: true,
+                    auth:
+                      subscription.auth,
 
                   },
 
                 },
 
-              },
+                notificationPayload
 
-            });
+              );
 
-          await transaction
-            .conversation
-            .update({
+            console.log(
 
-              where: {
+              `[Push] Envío aceptado. Suscripción ${subscription.id}. Estado: ${result.statusCode}`
 
-                id:
-                  conversationId,
+            );
 
-              },
+            return result;
 
-              data: {
+          } catch (error: unknown) {
 
-                updatedAt:
-                  new Date(),
+            const statusCode =
 
-              },
+              typeof error === "object" &&
+              error !== null &&
+              "statusCode" in error
 
-            });
+                ? Number(
+                    error.statusCode
+                  )
 
-          return createdMessage;
+                : undefined;
+
+            console.error(
+
+              `[Push] Error en suscripción ${subscription.id}. Estado: ${statusCode ?? "desconocido"}`,
+
+              error
+
+            );
+
+            if (
+              statusCode === 404 ||
+              statusCode === 410
+            ) {
+
+              await prisma
+                .pushSubscription
+                .delete({
+
+                  where: {
+
+                    endpoint:
+                      subscription.endpoint,
+
+                  },
+
+                })
+                .catch(
+                  () => undefined
+                );
+
+            }
+
+            throw error;
+
+          }
 
         }
 
-      );
+      )
 
-    /*
-     * La respuesta del mensaje no debe depender
-     * de que el proveedor Push esté disponible.
-     */
-
-    void sendChatPushNotifications(
-
-      receiver.userId,
-
-      {
-
-        conversationId,
-
-        senderName:
-          message.sender.name,
-
-        content:
-          message.content,
-
-      }
-
-    ).catch(error => {
-
-      console.error(
-        "El mensaje fue guardado, pero la notificación falló:",
-        error
-      );
-
-    });
-
-    return NextResponse.json(
-      message,
-      {
-        status: 201,
-      }
     );
 
-  } catch (error) {
+  const fulfilled =
+    results.filter(
 
-    console.error(
-      "No fue posible enviar el mensaje:",
-      error
-    );
+      result =>
 
-    return NextResponse.json(
-      {
-        message:
-          "No fue posible enviar el mensaje.",
-      },
-      {
-        status: 500,
-      }
-    );
+        result.status ===
+        "fulfilled"
 
-  }
+    ).length;
+
+  console.log(
+
+    `[Push] Resultado: ${fulfilled}/${results.length} envío(s) aceptado(s).`
+
+  );
 
 }

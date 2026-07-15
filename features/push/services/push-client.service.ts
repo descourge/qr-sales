@@ -44,29 +44,98 @@ function urlBase64ToUint8Array(
 
 export function supportsPushNotifications(): boolean {
 
-  return (
+  const supported =
     typeof window !== "undefined" &&
     "serviceWorker" in navigator &&
     "PushManager" in window &&
-    "Notification" in window
+    "Notification" in window;
+
+  console.log(
+    "[Push] Soporte disponible:",
+    supported
   );
+
+  return supported;
 
 }
 
 async function getActiveServiceWorkerRegistration():
   Promise<ServiceWorkerRegistration | null> {
 
+  console.log(
+    "[Push] Buscando Service Worker..."
+  );
+
+  const directRegistration =
+    await navigator.serviceWorker
+      .getRegistration();
+
+  if (
+    directRegistration?.active
+  ) {
+
+    console.log(
+      "[Push] Service Worker directo encontrado:",
+      {
+        scope:
+          directRegistration.scope,
+
+        scriptURL:
+          directRegistration.active
+            .scriptURL,
+      }
+    );
+
+    return directRegistration;
+
+  }
+
   const registrations =
     await navigator.serviceWorker
       .getRegistrations();
 
-  const registration =
+  console.log(
+    "[Push] Registraciones encontradas:",
+    registrations.map(
+      registration => ({
+        scope:
+          registration.scope,
+
+        active:
+          registration.active
+            ?.scriptURL ??
+          null,
+
+        waiting:
+          registration.waiting
+            ?.scriptURL ??
+          null,
+
+        installing:
+          registration.installing
+            ?.scriptURL ??
+          null,
+      })
+    )
+  );
+
+  const activeRegistration =
     registrations.find(
-      item =>
-        item.active !== null
+      registration =>
+        registration.active !== null
     );
 
-  return registration ?? null;
+  if (!activeRegistration) {
+
+    console.warn(
+      "[Push] No existe ningún Service Worker activo."
+    );
+
+    return null;
+
+  }
+
+  return activeRegistration;
 
 }
 
@@ -75,21 +144,29 @@ async function saveSubscription(
   userId: number,
   subscription: PushSubscription
 ): Promise<void> {
+
   const serialized =
     subscription.toJSON();
+
+  console.log(
+    "[Push] Suscripción serializada:",
+    serialized
+  );
 
   if (
     !serialized.endpoint ||
     !serialized.keys?.p256dh ||
     !serialized.keys?.auth
   ) {
+
     throw new Error(
       "La suscripción Push está incompleta."
     );
+
   }
 
   console.log(
-    "[Push] Guardando suscripción para:",
+    "[Push] Enviando suscripción a la API:",
     {
       companyId,
       userId,
@@ -102,37 +179,65 @@ async function saveSubscription(
     await fetch(
       "/api/push/subscriptions",
       {
-        method: "POST",
+        method:
+          "POST",
 
         headers: {
           "Content-Type":
             "application/json",
         },
 
-        body: JSON.stringify({
-          companyId,
-          userId,
-          subscription:
-            serialized,
-        }),
+        body:
+          JSON.stringify({
+            companyId,
+            userId,
+            subscription:
+              serialized,
+          }),
       }
     );
 
-  const result =
-    await response.json();
+  let result: {
+    message?: string;
+    id?: number;
+  };
+
+  try {
+
+    result =
+      await response.json();
+
+  } catch {
+
+    result = {
+      message:
+        "La API devolvió una respuesta inválida.",
+    };
+
+  }
 
   console.log(
-    "[Push] Respuesta API:",
-    response.status,
-    result
+    "[Push] Respuesta de la API:",
+    {
+      status:
+        response.status,
+
+      ok:
+        response.ok,
+
+      result,
+    }
   );
 
   if (!response.ok) {
+
     throw new Error(
       result.message ??
         "No fue posible guardar la suscripción Push."
     );
+
   }
+
 }
 
 export async function subscribeToPushNotifications(
@@ -140,7 +245,17 @@ export async function subscribeToPushNotifications(
   userId: number
 ): Promise<PushSubscription> {
 
-  if (!supportsPushNotifications()) {
+  console.log(
+    "[Push] Iniciando registro:",
+    {
+      companyId,
+      userId,
+    }
+  );
+
+  if (
+    !supportsPushNotifications()
+  ) {
 
     throw new Error(
       "Este dispositivo no admite Web Push."
@@ -151,6 +266,11 @@ export async function subscribeToPushNotifications(
   const publicKey =
     process.env
       .NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+
+  console.log(
+    "[Push] Clave VAPID pública disponible:",
+    Boolean(publicKey)
+  );
 
   if (!publicKey) {
 
@@ -163,15 +283,35 @@ export async function subscribeToPushNotifications(
   let permission =
     Notification.permission;
 
-  if (permission === "default") {
+  console.log(
+    "[Push] Permiso actual:",
+    permission
+  );
+
+  if (
+    permission ===
+    "default"
+  ) {
+
+    console.log(
+      "[Push] Solicitando permiso..."
+    );
 
     permission =
       await Notification
         .requestPermission();
 
+    console.log(
+      "[Push] Permiso obtenido:",
+      permission
+    );
+
   }
 
-  if (permission !== "granted") {
+  if (
+    permission !==
+    "granted"
+  ) {
 
     throw new Error(
       "Las notificaciones no están autorizadas."
@@ -192,7 +332,14 @@ export async function subscribeToPushNotifications(
 
   console.log(
     "[Push] Service Worker activo:",
-    registration.active?.scriptURL
+    {
+      scope:
+        registration.scope,
+
+      scriptURL:
+        registration.active
+          ?.scriptURL,
+    }
   );
 
   let subscription =
@@ -200,13 +347,25 @@ export async function subscribeToPushNotifications(
       .pushManager
       .getSubscription();
 
+  console.log(
+    "[Push] Suscripción existente:",
+    subscription
+      ? subscription.toJSON()
+      : null
+  );
+
   if (!subscription) {
+
+    console.log(
+      "[Push] Creando nueva suscripción..."
+    );
 
     subscription =
       await registration
         .pushManager
         .subscribe({
-          userVisibleOnly: true,
+          userVisibleOnly:
+            true,
 
           applicationServerKey:
             urlBase64ToUint8Array(
@@ -215,13 +374,8 @@ export async function subscribeToPushNotifications(
         });
 
     console.log(
-      "[Push] Nueva suscripción creada."
-    );
-
-  } else {
-
-    console.log(
-      "[Push] Suscripción existente encontrada."
+      "[Push] Nueva suscripción creada:",
+      subscription.toJSON()
     );
 
   }
@@ -230,6 +384,10 @@ export async function subscribeToPushNotifications(
     companyId,
     userId,
     subscription
+  );
+
+  console.log(
+    "[Push] Registro completado correctamente."
   );
 
   return subscription;
@@ -241,11 +399,19 @@ export async function ensurePushSubscription(
   userId: number
 ): Promise<boolean> {
 
+  console.log(
+    "[Push] ensurePushSubscription ejecutado."
+  );
+
   try {
 
     await subscribeToPushNotifications(
       companyId,
       userId
+    );
+
+    console.log(
+      "[Push] Dispositivo registrado."
     );
 
     return true;
@@ -266,7 +432,9 @@ export async function ensurePushSubscription(
 export async function hasPushSubscription():
   Promise<boolean> {
 
-  if (!supportsPushNotifications()) {
+  if (
+    !supportsPushNotifications()
+  ) {
 
     return false;
 
@@ -285,6 +453,11 @@ export async function hasPushSubscription():
     await registration
       .pushManager
       .getSubscription();
+
+  console.log(
+    "[Push] hasPushSubscription:",
+    Boolean(subscription)
+  );
 
   return subscription !== null;
 

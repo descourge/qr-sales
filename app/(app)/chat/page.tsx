@@ -240,6 +240,65 @@ const requestedConversationId =
 
   useEffect(() => {
 
+  if (!session) {
+
+    return;
+
+  }
+
+  if (
+    typeof window === "undefined" ||
+    !("Notification" in window)
+  ) {
+
+    return;
+
+  }
+
+  if (
+    Notification.permission !== "granted"
+  ) {
+
+    console.warn(
+      "[Push] El permiso todavía no está concedido:",
+      Notification.permission
+    );
+
+    return;
+
+  }
+
+  const companyId =
+    session.company.id;
+
+  const userId =
+    session.user.id;
+
+  async function registerDevice() {
+
+    console.log(
+      "[Push] Intentando registrar dispositivo al abrir Mensajes..."
+    );
+
+    const success =
+      await ensurePushSubscription(
+        companyId,
+        userId
+      );
+
+    console.log(
+      "[Push] Resultado del registro automático:",
+      success
+    );
+
+  }
+
+  void registerDevice();
+
+}, [session]);
+
+  useEffect(() => {
+
     if (!selectedConversation) {
 
       setMessages([]);

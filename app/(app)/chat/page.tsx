@@ -471,18 +471,21 @@ async function handleStartConversation(
     /*
      * Abrir inmediatamente.
      */
-    setSelectedConversation(
-      conversation
-    );
+setSelectedConversation(
+  conversation
+);
 
-    /*
-     * Intentar registrar Push después,
-     * sin detener el chat.
-     */
-    void ensurePushSubscription(
-      companyId,
-      currentUserId
-    );
+void ensurePushSubscription(
+  companyId,
+  currentUserId
+).then(success => {
+
+  console.log(
+    "[Push] Registro al iniciar conversación:",
+    success
+  );
+
+});
 
   } catch (error) {
 
@@ -505,25 +508,27 @@ function handleSelectConversation(
   conversation: ChatConversation
 ) {
 
-  /*
-   * Primero se abre el chat.
-   */
   setSelectedConversation(
     conversation
   );
 
-  /*
-   * Push se intenta en segundo plano.
-   * No puede bloquear la navegación.
-   */
-  if (session) {
+  if (!session) {
 
-    void ensurePushSubscription(
-      session.company.id,
-      session.user.id
-    );
+    return;
 
   }
+
+  void ensurePushSubscription(
+    session.company.id,
+    session.user.id
+  ).then(success => {
+
+    console.log(
+      "[Push] Registro al seleccionar conversación:",
+      success
+    );
+
+  });
 
 }
 
@@ -658,16 +663,12 @@ function handleSelectConversation(
 
         <div className="space-y-6">
 
-          <ConversationList
-  conversations={
-    conversations
-  }
+<ConversationList
+  conversations={conversations}
   selectedConversationId={
     selectedConversation?.id
   }
-  loading={
-    loadingInitial
-  }
+  loading={loadingInitial}
   onSelect={
     handleSelectConversation
   }

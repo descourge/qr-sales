@@ -1,80 +1,154 @@
 function urlBase64ToUint8Array(
   value: string
-) {
+): Uint8Array<ArrayBuffer> {
 
   const padding =
     "=".repeat(
-      (4 - value.length % 4) %
-      4
+      (4 - (value.length % 4)) % 4
     );
 
   const base64 =
-    (
-      value +
-      padding
-    )
-      .replace(
-        /-/g,
-        "+"
-      )
-      .replace(
-        /_/g,
-        "/"
-      );
+    `${value}${padding}`
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
 
   const rawData =
-    window.atob(
-      base64
+    window.atob(base64);
+
+  const buffer =
+    new ArrayBuffer(
+      rawData.length
     );
 
-  return Uint8Array.from(
+  const output =
+    new Uint8Array(
+      buffer
+    );
 
-    [...rawData].map(
+  for (
+    let index = 0;
+    index < rawData.length;
+    index++
+  ) {
 
-      character =>
+    output[index] =
+      rawData.charCodeAt(
+        index
+      );
 
-        character.charCodeAt(0)
+  }
 
-    )
+  return output;
 
+}
+
+export function supportsPushNotifications(): boolean {
+
+  return (
+    typeof window !== "undefined" &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window
   );
 
 }
 
-export function supportsPushNotifications() {
+async function getActiveServiceWorkerRegistration():
+  Promise<ServiceWorkerRegistration | null> {
 
-  return (
+  const registrations =
+    await navigator.serviceWorker
+      .getRegistrations();
 
-    typeof window !==
-      "undefined" &&
+  const registration =
+    registrations.find(
+      item =>
+        item.active !== null
+    );
 
-    "serviceWorker" in
-      navigator &&
+  return registration ?? null;
 
-    "PushManager" in
-      window &&
+}
 
-    "Notification" in
-      window
+async function saveSubscription(
+  companyId: number,
+  userId: number,
+  subscription: PushSubscription
+): Promise<void> {
 
+  const serialized =
+    subscription.toJSON();
+
+  console.log(
+    "[Push] Suscripción que se enviará:",
+    serialized
+  );
+
+  if (
+    !serialized.endpoint ||
+    !serialized.keys?.p256dh ||
+    !serialized.keys?.auth
+  ) {
+
+    throw new Error(
+      "La suscripción Push generada está incompleta."
+    );
+
+  }
+
+  const response =
+    await fetch(
+      "/api/push/subscriptions",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          companyId,
+          userId,
+          subscription: serialized,
+        }),
+      }
+    );
+
+  const result =
+    await response.json();
+
+  if (!response.ok) {
+
+    console.error(
+      "[Push] Error API:",
+      response.status,
+      result
+    );
+
+    throw new Error(
+      result.message ??
+        "No fue posible guardar la suscripción Push."
+    );
+
+  }
+
+  console.log(
+    "[Push] Dispositivo registrado:",
+    result
   );
 
 }
 
 export async function subscribeToPushNotifications(
-
   companyId: number,
-
   userId: number
+): Promise<PushSubscription> {
 
-) {
-
-  if (
-    !supportsPushNotifications()
-  ) {
+  if (!supportsPushNotifications()) {
 
     throw new Error(
-      "Este dispositivo no admite notificaciones Push."
+      "Este dispositivo no admite Web Push."
     );
 
   }
@@ -86,47 +160,45 @@ export async function subscribeToPushNotifications(
   if (!publicKey) {
 
     throw new Error(
-      "No se configuró la clave pública VAPID."
+      "NEXT_PUBLIC_VAPID_PUBLIC_KEY no está configurada."
     );
 
   }
 
-    let permission =
+  let permission =
     Notification.permission;
 
-    if (
-    permission ===
-    "default"
-    ) {
+  if (permission === "default") {
 
     permission =
-        await Notification
+      await Notification
         .requestPermission();
 
-    }
+  }
 
-    if (
-    permission !==
-    "granted"
-    ) {
+  if (permission !== "granted") {
 
     throw new Error(
-        "Las notificaciones no están autorizadas en este dispositivo."
+      "Las notificaciones no están autorizadas."
     );
 
-    }
+  }
 
   const registration =
-  await navigator.serviceWorker
-    .getRegistration();
+    await getActiveServiceWorkerRegistration();
 
-if (!registration) {
+  if (!registration) {
 
-  throw new Error(
-    "No existe un Service Worker activo."
+    throw new Error(
+      "No existe un Service Worker activo."
+    );
+
+  }
+
+  console.log(
+    "[Push] Service Worker activo:",
+    registration.active?.scriptURL
   );
-
-}
 
   let subscription =
     await registration
@@ -139,101 +211,33 @@ if (!registration) {
       await registration
         .pushManager
         .subscribe({
-
-          userVisibleOnly:
-            true,
+          userVisibleOnly: true,
 
           applicationServerKey:
             urlBase64ToUint8Array(
               publicKey
             ),
-
         });
 
-  }
-
-  const serialized =
-    subscription.toJSON();
-
-  const response =
-    await fetch(
-      "/api/push/subscriptions",
-      {
-
-        method:
-          "POST",
-
-        headers: {
-
-          "Content-Type":
-            "application/json",
-
-        },
-
-        body:
-          JSON.stringify({
-
-            companyId,
-
-            userId,
-
-            subscription:
-              serialized,
-
-          }),
-
-      }
+    console.log(
+      "[Push] Nueva suscripción creada."
     );
 
-  const result =
-    await response.json();
+  } else {
 
-  if (!response.ok) {
-
-    throw new Error(
-
-      result.message ??
-
-      "No fue posible registrar las notificaciones."
-
+    console.log(
+      "[Push] Suscripción existente encontrada."
     );
 
   }
 
-  return subscription;
-
-}
-
-export async function hasPushSubscription() {
-
-  if (
-    !supportsPushNotifications()
-  ) {
-
-    return false;
-
-  }
-
-const registration =
-  await navigator.serviceWorker
-    .getRegistration();
-
-if (!registration) {
-
-  throw new Error(
-    "No existe un Service Worker activo."
-  );
-
-}
-
-  const subscription =
-    await registration
-      .pushManager
-      .getSubscription();
-
-  return Boolean(
+  await saveSubscription(
+    companyId,
+    userId,
     subscription
   );
+
+  return subscription;
 
 }
 
@@ -241,41 +245,6 @@ export async function ensurePushSubscription(
   companyId: number,
   userId: number
 ): Promise<boolean> {
-
-  if (
-    !supportsPushNotifications()
-  ) {
-
-    return false;
-
-  }
-
-  if (
-    Notification.permission ===
-    "denied"
-  ) {
-
-    return false;
-
-  }
-
-  /*
-   * Evita esperar indefinidamente a
-   * navigator.serviceWorker.ready.
-   */
-  const registration =
-    await navigator.serviceWorker
-      .getRegistration();
-
-  if (!registration) {
-
-    console.warn(
-      "No existe un Service Worker activo para registrar Push."
-    );
-
-    return false;
-
-  }
 
   try {
 
@@ -288,13 +257,40 @@ export async function ensurePushSubscription(
 
   } catch (error) {
 
-    console.warn(
-      "No fue posible registrar Push:",
+    console.error(
+      "[Push] No se pudo registrar el dispositivo:",
       error
     );
 
     return false;
 
   }
+
+}
+
+export async function hasPushSubscription():
+  Promise<boolean> {
+
+  if (!supportsPushNotifications()) {
+
+    return false;
+
+  }
+
+  const registration =
+    await getActiveServiceWorkerRegistration();
+
+  if (!registration) {
+
+    return false;
+
+  }
+
+  const subscription =
+    await registration
+      .pushManager
+      .getSubscription();
+
+  return subscription !== null;
 
 }

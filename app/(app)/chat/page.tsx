@@ -504,32 +504,38 @@ void ensurePushSubscription(
 
 }
 
-function handleSelectConversation(
+async function handleSelectConversation(
   conversation: ChatConversation
 ) {
-
   setSelectedConversation(
     conversation
   );
 
   if (!session) {
-
     return;
-
   }
 
-  void ensurePushSubscription(
-    session.company.id,
-    session.user.id
-  ).then(success => {
-
+  try {
     console.log(
-      "[Push] Registro al seleccionar conversación:",
-      success
+      "[Push] Iniciando registro del dispositivo..."
     );
 
-  });
+    const success =
+      await ensurePushSubscription(
+        session.company.id,
+        session.user.id
+      );
 
+    console.log(
+      "[Push] Resultado del registro:",
+      success
+    );
+  } catch (error) {
+    console.error(
+      "[Push] Error no controlado:",
+      error
+    );
+  }
 }
 
   async function handleSendMessage(

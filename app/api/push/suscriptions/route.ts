@@ -39,6 +39,11 @@ export async function POST(
       await request.json() as
         SubscriptionBody;
 
+    console.log(
+      "[Push API] Body recibido:",
+      JSON.stringify(body, null, 2)
+    );
+
     const companyId =
       Number(body.companyId);
 
@@ -62,6 +67,20 @@ export async function POST(
         ?.auth
         ?.trim();
 
+    console.log(
+      "[Push API] Datos procesados:",
+      {
+        companyId,
+        userId,
+        hasEndpoint:
+          Boolean(endpoint),
+        hasP256dh:
+          Boolean(p256dh),
+        hasAuth:
+          Boolean(auth),
+      }
+    );
+
     if (
       !companyId ||
       !userId ||
@@ -69,6 +88,10 @@ export async function POST(
       !p256dh ||
       !auth
     ) {
+
+      console.warn(
+        "[Push API] Suscripción inválida."
+      );
 
       return NextResponse.json(
         {
@@ -81,6 +104,10 @@ export async function POST(
       );
 
     }
+
+    console.log(
+      "[Push API] Buscando usuario..."
+    );
 
     const user =
       await prisma.user.findFirst({
@@ -104,6 +131,10 @@ export async function POST(
 
     if (!user) {
 
+      console.warn(
+        "[Push API] Usuario no encontrado."
+      );
+
       return NextResponse.json(
         {
           message:
@@ -115,6 +146,14 @@ export async function POST(
       );
 
     }
+
+    console.log(
+      "[Push API] Usuario encontrado."
+    );
+
+    console.log(
+      "[Push API] Ejecutando upsert..."
+    );
 
     const subscription =
       await prisma.pushSubscription.upsert({
@@ -151,9 +190,18 @@ export async function POST(
 
           id: true,
 
+          userId: true,
+
+          endpoint: true,
+
         },
 
       });
+
+    console.log(
+      "[Push API] Suscripción registrada:",
+      subscription
+    );
 
     return NextResponse.json(
       subscription,
@@ -165,7 +213,7 @@ export async function POST(
   } catch (error) {
 
     console.error(
-      "No fue posible registrar la suscripción Push:",
+      "[Push API] Error registrando suscripción:",
       error
     );
 

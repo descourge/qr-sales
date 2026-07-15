@@ -75,26 +75,28 @@ async function saveSubscription(
   userId: number,
   subscription: PushSubscription
 ): Promise<void> {
-
   const serialized =
     subscription.toJSON();
-
-  console.log(
-    "[Push] Suscripción que se enviará:",
-    serialized
-  );
 
   if (
     !serialized.endpoint ||
     !serialized.keys?.p256dh ||
     !serialized.keys?.auth
   ) {
-
     throw new Error(
-      "La suscripción Push generada está incompleta."
+      "La suscripción Push está incompleta."
     );
-
   }
+
+  console.log(
+    "[Push] Guardando suscripción para:",
+    {
+      companyId,
+      userId,
+      endpoint:
+        serialized.endpoint,
+    }
+  );
 
   const response =
     await fetch(
@@ -110,7 +112,8 @@ async function saveSubscription(
         body: JSON.stringify({
           companyId,
           userId,
-          subscription: serialized,
+          subscription:
+            serialized,
         }),
       }
     );
@@ -118,26 +121,18 @@ async function saveSubscription(
   const result =
     await response.json();
 
+  console.log(
+    "[Push] Respuesta API:",
+    response.status,
+    result
+  );
+
   if (!response.ok) {
-
-    console.error(
-      "[Push] Error API:",
-      response.status,
-      result
-    );
-
     throw new Error(
       result.message ??
         "No fue posible guardar la suscripción Push."
     );
-
   }
-
-  console.log(
-    "[Push] Dispositivo registrado:",
-    result
-  );
-
 }
 
 export async function subscribeToPushNotifications(

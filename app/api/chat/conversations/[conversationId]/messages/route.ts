@@ -1,191 +1,468 @@
 import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
+
+import {
   prisma,
 } from "@/lib/prisma";
 
 import {
-  webPush,
-} from "@/features/push/lib/web-push";
+  sendChatPushNotifications,
+} from "@/features/push/services/push.service";
 
-type ChatPushPayload = {
-
-  conversationId: number;
-
-  senderName: string;
-
-  content: string;
-
+type RouteContext = {
+  params: Promise<{
+    conversationId: string;
+  }>;
 };
 
-export async function sendChatPushNotifications(
+/* ===========================================
+   VALIDAR ACCESO
+=========================================== */
 
-  receiverUserId: number,
-
-  payload: ChatPushPayload
-
+async function validateConversationAccess(
+  conversationId: number,
+  companyId: number,
+  userId: number
 ) {
 
-  const subscriptions =
-    await prisma.pushSubscription.findMany({
+  return prisma.conversation.findFirst({
+    where: {
+      id:
+        conversationId,
 
-      where: {
+      companyId,
 
-        userId:
-          receiverUserId,
-
+      participants: {
+        some: {
+          userId,
+        },
       },
+    },
+    select: {
+      id: true,
+    },
+  });
 
-    });
+}
 
-  console.log(
+/* ===========================================
+   OBTENER MENSAJES
+=========================================== */
 
-    `[Push] Usuario receptor ${receiverUserId}: ${subscriptions.length} suscripción(es).`
+export async function GET(
+  request: NextRequest,
+  context: RouteContext
+) {
 
-  );
+  try {
 
-  if (
-    subscriptions.length === 0
-  ) {
+    const {
+      conversationId:
+        conversationIdParam,
+    } =
+      await context.params;
 
-    console.warn(
+    const conversationId =
+      Number(
+        conversationIdParam
+      );
 
-      `[Push] El usuario ${receiverUserId} no tiene dispositivos registrados.`
+    const companyId =
+      Number(
+        request.nextUrl.searchParams.get(
+          "companyId"
+        )
+      );
 
+    const userId =
+      Number(
+        request.nextUrl.searchParams.get(
+          "userId"
+        )
+      );
+
+    const afterId =
+      Number(
+        request.nextUrl.searchParams.get(
+          "afterId"
+        )
+      );
+
+    if (
+      !conversationId ||
+      !companyId ||
+      !userId
+    ) {
+
+      return NextResponse.json(
+        {
+          message:
+            "conversationId, companyId y userId son obligatorios.",
+        },
+        {
+          status: 400,
+        }
+      );
+
+    }
+
+    const conversation =
+      await validateConversationAccess(
+        conversationId,
+        companyId,
+        userId
+      );
+
+    if (!conversation) {
+
+      return NextResponse.json(
+        {
+          message:
+            "No tiene acceso a esta conversación.",
+        },
+        {
+          status: 403,
+        }
+      );
+
+    }
+
+    const messages =
+      await prisma.message.findMany({
+        where: {
+          conversationId,
+
+          ...(afterId
+            ? {
+                id: {
+                  gt: afterId,
+                },
+              }
+            : {}),
+        },
+        orderBy: {
+          id: "asc",
+        },
+        take: afterId
+          ? 100
+          : 200,
+        include: {
+          sender: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+    return NextResponse.json(
+      messages
     );
 
-    return;
+  } catch (error) {
+
+    console.error(
+      "No fue posible obtener los mensajes:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        message:
+          "No fue posible obtener los mensajes.",
+      },
+      {
+        status: 500,
+      }
+    );
 
   }
 
-  const notificationPayload =
-    JSON.stringify({
+}
 
-      type:
-        "chat",
+/* ===========================================
+   ENVIAR MENSAJE
+=========================================== */
 
-      title:
-        payload.senderName,
+export async function POST(
+  request: NextRequest,
+  context: RouteContext
+) {
 
-      body:
-        payload.content,
+  try {
 
-      url:
-        `/chat?conversationId=${payload.conversationId}`,
-
+    const {
       conversationId:
-        payload.conversationId,
+        conversationIdParam,
+    } =
+      await context.params;
 
-    });
+    const conversationId =
+      Number(
+        conversationIdParam
+      );
 
-  const results =
-    await Promise.allSettled(
+    const body =
+      await request.json();
 
-      subscriptions.map(
+    const companyId =
+      Number(body.companyId);
 
-        async subscription => {
+    const userId =
+      Number(body.userId);
 
-          try {
+    const content =
+      typeof body.content ===
+      "string"
 
-            const result =
-              await webPush.sendNotification(
+        ? body.content.trim()
 
-                {
+        : "";
 
-                  endpoint:
-                    subscription.endpoint,
+    if (
+      !conversationId ||
+      !companyId ||
+      !userId ||
+      !content
+    ) {
 
-                  keys: {
+      return NextResponse.json(
+        {
+          message:
+            "conversationId, companyId, userId y content son obligatorios.",
+        },
+        {
+          status: 400,
+        }
+      );
 
-                    p256dh:
-                      subscription.p256dh,
+    }
 
-                    auth:
-                      subscription.auth,
+    if (
+      content.length > 1000
+    ) {
+
+      return NextResponse.json(
+        {
+          message:
+            "El mensaje no puede superar los 1000 caracteres.",
+        },
+        {
+          status: 400,
+        }
+      );
+
+    }
+
+    const conversation =
+      await prisma.conversation.findFirst({
+
+        where: {
+
+          id:
+            conversationId,
+
+          companyId,
+
+          participants: {
+
+            some: {
+
+              userId,
+
+            },
+
+          },
+
+        },
+
+        include: {
+
+          participants: {
+
+            select: {
+
+              userId: true,
+
+            },
+
+          },
+
+        },
+
+      });
+
+    if (!conversation) {
+
+      return NextResponse.json(
+        {
+          message:
+            "No tiene acceso a esta conversación.",
+        },
+        {
+          status: 403,
+        }
+      );
+
+    }
+
+    const receiver =
+      conversation.participants.find(
+
+        participant =>
+
+          participant.userId !==
+          userId
+
+      );
+
+    if (!receiver) {
+
+      return NextResponse.json(
+        {
+          message:
+            "No fue posible identificar al destinatario.",
+        },
+        {
+          status: 400,
+        }
+      );
+
+    }
+
+    const message =
+      await prisma.$transaction(
+
+        async transaction => {
+
+          const createdMessage =
+            await transaction.message.create({
+
+              data: {
+
+                conversationId,
+
+                senderId:
+                  userId,
+
+                content,
+
+              },
+
+              include: {
+
+                sender: {
+
+                  select: {
+
+                    id: true,
+
+                    name: true,
 
                   },
 
                 },
 
-                notificationPayload
+              },
 
-              );
+            });
 
-            console.log(
+          await transaction
+            .conversation
+            .update({
 
-              `[Push] Envío aceptado. Suscripción ${subscription.id}. Estado: ${result.statusCode}`
+              where: {
 
-            );
+                id:
+                  conversationId,
 
-            return result;
+              },
 
-          } catch (error: unknown) {
+              data: {
 
-            const statusCode =
+                updatedAt:
+                  new Date(),
 
-              typeof error === "object" &&
-              error !== null &&
-              "statusCode" in error
+              },
 
-                ? Number(
-                    error.statusCode
-                  )
+            });
 
-                : undefined;
-
-            console.error(
-
-              `[Push] Error en suscripción ${subscription.id}. Estado: ${statusCode ?? "desconocido"}`,
-
-              error
-
-            );
-
-            if (
-              statusCode === 404 ||
-              statusCode === 410
-            ) {
-
-              await prisma
-                .pushSubscription
-                .delete({
-
-                  where: {
-
-                    endpoint:
-                      subscription.endpoint,
-
-                  },
-
-                })
-                .catch(
-                  () => undefined
-                );
-
-            }
-
-            throw error;
-
-          }
+          return createdMessage;
 
         }
 
-      )
+      );
 
-    );
+    /*
+     * La respuesta del mensaje no debe depender
+     * de que el proveedor Push esté disponible.
+     */
 
-  const fulfilled =
-    results.filter(
+    try {
 
-      result =>
+  await sendChatPushNotifications(
 
-        result.status ===
-        "fulfilled"
+    receiver.userId,
 
-    ).length;
+    {
 
-  console.log(
+      conversationId,
 
-    `[Push] Resultado: ${fulfilled}/${results.length} envío(s) aceptado(s).`
+      senderName:
+        message.sender.name,
+
+      content:
+        message.content,
+
+    }
 
   );
+
+} catch (pushError) {
+
+  /*
+   * El mensaje ya fue guardado.
+   * Una falla Push no debe convertir
+   * la respuesta en un error.
+   */
+
+  console.error(
+
+    "El mensaje fue guardado, pero la notificación Push falló:",
+
+    pushError
+
+  );
+
+}
+
+    return NextResponse.json(
+      message,
+      {
+        status: 201,
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      "No fue posible enviar el mensaje:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        message:
+          "No fue posible enviar el mensaje.",
+      },
+      {
+        status: 500,
+      }
+    );
+
+  }
 
 }

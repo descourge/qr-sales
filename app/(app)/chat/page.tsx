@@ -42,6 +42,10 @@ import {
   useSearchParams,
 } from "next/navigation";
 
+import {
+  ensurePushSubscription,
+} from "@/features/push/services/push-client.service";
+
 
 export default function ChatPage() {
 
@@ -405,71 +409,70 @@ const requestedConversationId =
     messages,
   ]);
 
-  async function handleStartConversation(
-    user: ChatUser
-  ) {
+async function handleStartConversation(
+  user: ChatUser
+) {
 
-    if (!session) {
+  if (!session) {
 
-      return;
-
-    }
-
-    try {
-
-      const result =
-        await createConversation({
-          companyId:
-            session.company.id,
-
-          userId:
-            session.user.id,
-
-          targetUserId:
-            user.id,
-        });
-
-      const updated =
-        await getConversations(
-
-          session.company.id,
-
-          session.user.id
-
-        );
-
-      setConversations(
-        updated
-      );
-
-      const conversation =
-        updated.find(
-          item =>
-            item.id ===
-            result.id
-        );
-
-      if (conversation) {
-
-        setSelectedConversation(
-          conversation
-        );
-
-      }
-
-    } catch (error) {
-
-      console.error(error);
-
-      notify.error(
-        error instanceof Error
-          ? error.message
-          : "No fue posible iniciar la conversación."
-      );
-
-    }
+    return;
 
   }
+
+  try {
+
+    await ensurePushSubscription(
+      session.company.id,
+      session.user.id
+    );
+
+    const result =
+      await createConversation({
+        companyId:
+          session.company.id,
+
+        userId:
+          session.user.id,
+
+        targetUserId:
+          user.id,
+      });
+
+    const updated =
+      await getConversations(
+        session.company.id,
+        session.user.id
+      );
+
+    setConversations(updated);
+
+    const conversation =
+      updated.find(
+        item =>
+          item.id === result.id
+      );
+
+    if (conversation) {
+
+      setSelectedConversation(
+        conversation
+      );
+
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+    notify.error(
+      error instanceof Error
+        ? error.message
+        : "No fue posible iniciar la conversación."
+    );
+
+  }
+
+}
 
   async function handleSendMessage(
     content: string

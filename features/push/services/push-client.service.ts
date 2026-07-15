@@ -222,3 +222,32 @@ export async function hasPushSubscription() {
   );
 
 }
+
+export async function ensurePushSubscription(
+  companyId: number,
+  userId: number
+) {
+
+  if (!supportsPushNotifications()) {
+
+    return false;
+
+  }
+
+  if (
+    Notification.permission ===
+    "denied"
+  ) {
+
+    return false;
+
+  }
+
+  await subscribeToPushNotifications(
+    companyId,
+    userId
+  );
+
+  return true;
+
+}

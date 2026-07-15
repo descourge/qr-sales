@@ -29,6 +29,8 @@ import {
 
 } from "@/features/auth/services/offline-auth.service";
 
+import PushSubscriptionRegister from "@/features/push/components/PushSubscriptionRegister";
+
 export default function AppLayout({
   children,
 }: {
@@ -230,6 +232,8 @@ useEffect(() => {
         />
 
         <AutoSync />
+
+        <PushSubscriptionRegister />
 
         <main
           className="

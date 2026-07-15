@@ -7,6 +7,7 @@ import {
   History,
   Receipt,
   FileBarChart2,
+  MessagesSquare
 } from "lucide-react";
 
 import { NavigationItem } from "@/shared/types/navigation";
@@ -37,5 +38,10 @@ export const navigation: NavigationItem[] = [
     title: "Reportes",
     href: "/reports",
     icon: FileBarChart2,
-  }
+  },
+  {
+  title: "Mensajes",
+  href: "/chat",
+  icon: MessagesSquare,
+  },
 ];

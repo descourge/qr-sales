@@ -117,9 +117,16 @@ export async function subscribeToPushNotifications(
     }
 
   const registration =
-    await navigator
-      .serviceWorker
-      .ready;
+  await navigator.serviceWorker
+    .getRegistration();
+
+if (!registration) {
+
+  throw new Error(
+    "No existe un Service Worker activo."
+  );
+
+}
 
   let subscription =
     await registration
@@ -207,10 +214,17 @@ export async function hasPushSubscription() {
 
   }
 
-  const registration =
-    await navigator
-      .serviceWorker
-      .ready;
+const registration =
+  await navigator.serviceWorker
+    .getRegistration();
+
+if (!registration) {
+
+  throw new Error(
+    "No existe un Service Worker activo."
+  );
+
+}
 
   const subscription =
     await registration
@@ -226,9 +240,11 @@ export async function hasPushSubscription() {
 export async function ensurePushSubscription(
   companyId: number,
   userId: number
-) {
+): Promise<boolean> {
 
-  if (!supportsPushNotifications()) {
+  if (
+    !supportsPushNotifications()
+  ) {
 
     return false;
 
@@ -243,11 +259,42 @@ export async function ensurePushSubscription(
 
   }
 
-  await subscribeToPushNotifications(
-    companyId,
-    userId
-  );
+  /*
+   * Evita esperar indefinidamente a
+   * navigator.serviceWorker.ready.
+   */
+  const registration =
+    await navigator.serviceWorker
+      .getRegistration();
 
-  return true;
+  if (!registration) {
+
+    console.warn(
+      "No existe un Service Worker activo para registrar Push."
+    );
+
+    return false;
+
+  }
+
+  try {
+
+    await subscribeToPushNotifications(
+      companyId,
+      userId
+    );
+
+    return true;
+
+  } catch (error) {
+
+    console.warn(
+      "No fue posible registrar Push:",
+      error
+    );
+
+    return false;
+
+  }
 
 }

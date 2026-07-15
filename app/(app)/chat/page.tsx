@@ -408,6 +408,7 @@ const requestedConversationId =
     selectedConversation,
     messages,
   ]);
+  
 
 async function handleStartConversation(
   user: ChatUser
@@ -419,55 +420,107 @@ async function handleStartConversation(
 
   }
 
-  try {
+  const companyId =
+    session.company.id;
 
-    await ensurePushSubscription(
-      session.company.id,
-      session.user.id
-    );
+  const currentUserId =
+    session.user.id;
+
+  try {
 
     const result =
       await createConversation({
-        companyId:
-          session.company.id,
+
+        companyId,
 
         userId:
-          session.user.id,
+          currentUserId,
 
         targetUserId:
           user.id,
+
       });
 
     const updated =
       await getConversations(
-        session.company.id,
-        session.user.id
+        companyId,
+        currentUserId
       );
 
-    setConversations(updated);
+    setConversations(
+      updated
+    );
 
     const conversation =
       updated.find(
         item =>
-          item.id === result.id
+          item.id ===
+          result.id
       );
 
-    if (conversation) {
+    if (!conversation) {
 
-      setSelectedConversation(
-        conversation
+      notify.error(
+        "La conversación no pudo cargarse."
       );
+
+      return;
 
     }
 
+    /*
+     * Abrir inmediatamente.
+     */
+    setSelectedConversation(
+      conversation
+    );
+
+    /*
+     * Intentar registrar Push después,
+     * sin detener el chat.
+     */
+    void ensurePushSubscription(
+      companyId,
+      currentUserId
+    );
+
   } catch (error) {
 
-    console.error(error);
+    console.error(
+      "No fue posible iniciar la conversación:",
+      error
+    );
 
     notify.error(
       error instanceof Error
         ? error.message
         : "No fue posible iniciar la conversación."
+    );
+
+  }
+
+}
+
+function handleSelectConversation(
+  conversation: ChatConversation
+) {
+
+  /*
+   * Primero se abre el chat.
+   */
+  setSelectedConversation(
+    conversation
+  );
+
+  /*
+   * Push se intenta en segundo plano.
+   * No puede bloquear la navegación.
+   */
+  if (session) {
+
+    void ensurePushSubscription(
+      session.company.id,
+      session.user.id
     );
 
   }
@@ -606,20 +659,19 @@ async function handleStartConversation(
         <div className="space-y-6">
 
           <ConversationList
-            conversations={
-              conversations
-            }
-            selectedConversationId={
-              selectedConversation
-                ?.id
-            }
-            loading={
-              loadingInitial
-            }
-            onSelect={
-              setSelectedConversation
-            }
-          />
+  conversations={
+    conversations
+  }
+  selectedConversationId={
+    selectedConversation?.id
+  }
+  loading={
+    loadingInitial
+  }
+  onSelect={
+    handleSelectConversation
+  }
+/>
 
           <ChatUserList
             users={users}

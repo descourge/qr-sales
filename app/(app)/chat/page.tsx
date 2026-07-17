@@ -276,7 +276,7 @@ const requestedConversationId =
 
   async function registerDevice() {
 
-    console.log(
+    console.warn(
       "[Push] Intentando registrar dispositivo al abrir Mensajes..."
     );
 
@@ -286,7 +286,7 @@ const requestedConversationId =
         userId
       );
 
-    console.log(
+    console.warn(
       "[Push] Resultado del registro automático:",
       success
     );
@@ -539,7 +539,7 @@ void ensurePushSubscription(
   currentUserId
 ).then(success => {
 
-  console.log(
+  console.warn(
     "[Push] Registro al iniciar conversación:",
     success
   );
@@ -575,7 +575,7 @@ async function handleSelectConversation(
   }
 
   try {
-    console.log(
+    console.warn(
       "[Push] Iniciando registro del dispositivo..."
     );
 
@@ -585,7 +585,7 @@ async function handleSelectConversation(
         session.user.id
       );
 
-    console.log(
+    console.warn(
       "[Push] Resultado del registro:",
       success
     );

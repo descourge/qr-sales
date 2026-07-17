@@ -50,7 +50,7 @@ export function supportsPushNotifications(): boolean {
     "PushManager" in window &&
     "Notification" in window;
 
-  console.log(
+  console.warn(
     "[Push] Soporte disponible:",
     supported
   );
@@ -62,7 +62,7 @@ export function supportsPushNotifications(): boolean {
 async function getActiveServiceWorkerRegistration():
   Promise<ServiceWorkerRegistration | null> {
 
-  console.log(
+  console.warn(
     "[Push] Buscando Service Worker..."
   );
 
@@ -74,7 +74,7 @@ async function getActiveServiceWorkerRegistration():
     directRegistration?.active
   ) {
 
-    console.log(
+    console.warn(
       "[Push] Service Worker directo encontrado:",
       {
         scope:
@@ -94,7 +94,7 @@ async function getActiveServiceWorkerRegistration():
     await navigator.serviceWorker
       .getRegistrations();
 
-  console.log(
+  console.warn(
     "[Push] Registraciones encontradas:",
     registrations.map(
       registration => ({
@@ -148,7 +148,7 @@ async function saveSubscription(
   const serialized =
     subscription.toJSON();
 
-  console.log(
+  console.warn(
     "[Push] Suscripción serializada:",
     serialized
   );
@@ -165,7 +165,7 @@ async function saveSubscription(
 
   }
 
-  console.log(
+  console.warn(
     "[Push] Enviando suscripción a la API:",
     {
       companyId,
@@ -216,7 +216,7 @@ async function saveSubscription(
 
   }
 
-  console.log(
+  console.warn(
     "[Push] Respuesta de la API:",
     {
       status:
@@ -245,7 +245,7 @@ export async function subscribeToPushNotifications(
   userId: number
 ): Promise<PushSubscription> {
 
-  console.log(
+  console.warn(
     "[Push] Iniciando registro:",
     {
       companyId,
@@ -267,7 +267,7 @@ export async function subscribeToPushNotifications(
     process.env
       .NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
-  console.log(
+  console.warn(
     "[Push] Clave VAPID pública disponible:",
     Boolean(publicKey)
   );
@@ -283,7 +283,7 @@ export async function subscribeToPushNotifications(
   let permission =
     Notification.permission;
 
-  console.log(
+  console.warn(
     "[Push] Permiso actual:",
     permission
   );
@@ -293,7 +293,7 @@ export async function subscribeToPushNotifications(
     "default"
   ) {
 
-    console.log(
+    console.warn(
       "[Push] Solicitando permiso..."
     );
 
@@ -301,7 +301,7 @@ export async function subscribeToPushNotifications(
       await Notification
         .requestPermission();
 
-    console.log(
+    console.warn(
       "[Push] Permiso obtenido:",
       permission
     );
@@ -330,7 +330,7 @@ export async function subscribeToPushNotifications(
 
   }
 
-  console.log(
+  console.warn(
     "[Push] Service Worker activo:",
     {
       scope:
@@ -347,7 +347,7 @@ export async function subscribeToPushNotifications(
       .pushManager
       .getSubscription();
 
-  console.log(
+  console.warn(
     "[Push] Suscripción existente:",
     subscription
       ? subscription.toJSON()
@@ -356,7 +356,7 @@ export async function subscribeToPushNotifications(
 
   if (!subscription) {
 
-    console.log(
+    console.warn(
       "[Push] Creando nueva suscripción..."
     );
 
@@ -373,7 +373,7 @@ export async function subscribeToPushNotifications(
             ),
         });
 
-    console.log(
+    console.warn(
       "[Push] Nueva suscripción creada:",
       subscription.toJSON()
     );
@@ -386,7 +386,7 @@ export async function subscribeToPushNotifications(
     subscription
   );
 
-  console.log(
+  console.warn(
     "[Push] Registro completado correctamente."
   );
 
@@ -399,7 +399,7 @@ export async function ensurePushSubscription(
   userId: number
 ): Promise<boolean> {
 
-  console.log(
+  console.warn(
     "[Push] ensurePushSubscription ejecutado."
   );
 
@@ -410,7 +410,7 @@ export async function ensurePushSubscription(
       userId
     );
 
-    console.log(
+    console.warn(
       "[Push] Dispositivo registrado."
     );
 
@@ -454,7 +454,7 @@ export async function hasPushSubscription():
       .pushManager
       .getSubscription();
 
-  console.log(
+  console.warn(
     "[Push] hasPushSubscription:",
     Boolean(subscription)
   );

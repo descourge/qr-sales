@@ -558,3 +558,75 @@ async function reportPushDebug(
   }
 
 }
+
+export async function detachPushSubscription(
+  companyId: number,
+  userId: number
+): Promise<void> {
+
+  if (!supportsPushNotifications()) {
+    return;
+  }
+
+  const registration =
+    await getActiveServiceWorkerRegistration();
+
+  if (!registration) {
+    return;
+  }
+
+  const subscription =
+    await registration
+      .pushManager
+      .getSubscription();
+
+  if (!subscription) {
+    return;
+  }
+
+  const response =
+    await fetch(
+      "/api/push/subscriptions",
+      {
+        method:
+          "DELETE",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          companyId,
+          userId,
+          endpoint:
+            subscription.endpoint,
+        }),
+      }
+    );
+
+  if (!response.ok) {
+
+    let message =
+      "No fue posible desvincular las notificaciones.";
+
+    try {
+
+      const result =
+        await response.json();
+
+      message =
+        result.message ??
+        message;
+
+    } catch {
+      // Se conserva el mensaje predeterminado.
+    }
+
+    throw new Error(
+      message
+    );
+
+  }
+
+}

@@ -29,6 +29,12 @@ type SubscriptionBody = {
 
 };
 
+type DeleteSubscriptionBody = {
+  companyId?: number;
+  userId?: number;
+  endpoint?: string;
+};
+
 export async function POST(
   request: NextRequest
 ) {
@@ -221,6 +227,103 @@ export async function POST(
       {
         message:
           "No fue posible registrar las notificaciones.",
+      },
+      {
+        status: 500,
+      }
+    );
+
+  }
+
+}
+
+export async function DELETE(
+  request: NextRequest
+) {
+
+  try {
+
+    const body =
+      await request.json() as
+        DeleteSubscriptionBody;
+
+    const companyId =
+      Number(body.companyId);
+
+    const userId =
+      Number(body.userId);
+
+    const endpoint =
+      body.endpoint?.trim();
+
+    if (
+      !companyId ||
+      !userId ||
+      !endpoint
+    ) {
+
+      return NextResponse.json(
+        {
+          message:
+            "Los datos de la suscripción no son válidos.",
+        },
+        {
+          status: 400,
+        }
+      );
+
+    }
+
+    const user =
+      await prisma.user.findFirst({
+        where: {
+          id:
+            userId,
+
+          companyId,
+        },
+
+        select: {
+          id: true,
+        },
+      });
+
+    if (!user) {
+
+      return NextResponse.json(
+        {
+          message:
+            "Usuario no autorizado.",
+        },
+        {
+          status: 403,
+        }
+      );
+
+    }
+
+    await prisma.pushSubscription.deleteMany({
+      where: {
+        endpoint,
+        userId,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+    });
+
+  } catch (error) {
+
+    console.error(
+      "[Push API] No fue posible desvincular la suscripción:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        message:
+          "No fue posible desvincular las notificaciones.",
       },
       {
         status: 500,

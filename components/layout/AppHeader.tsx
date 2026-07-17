@@ -33,6 +33,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import {
+  detachPushSubscription,
+} from "@/features/push/services/push-client.service";
+
 type Props = {
   onOpenSidebar: () => void;
 };
@@ -55,12 +59,37 @@ export default function AppHeader({
 
 const router = useRouter();
 
-function handleLogout() {
+async function handleLogout() {
+  const companyId =
+    session?.company.id;
 
-  logout();
+  const userId =
+    session?.user.id;
 
-  router.replace("/login");
+  if (
+    companyId &&
+    userId
+  ) {
+    try {
+      await detachPushSubscription(
+        companyId,
+        userId
+      );
+    } catch (error) {
+      console.error(
+        "[Push] No fue posible desvincular el dispositivo:",
+        error
+      );
+    }
+  }
 
+  await Promise.resolve(
+    logout()
+  );
+
+  router.replace(
+    "/login"
+  );
 }
 
   useEffect(() => {

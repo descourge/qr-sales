@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import PushNotificationPermission from "@/features/push/components/PushNotificationPermission";
+
 
 import {
   ShoppingCart,
@@ -180,6 +182,19 @@ async function loadDashboard(
 
   return (
     <div className="space-y-10">
+
+      {session && (
+
+        <PushNotificationPermission
+          companyId={
+            session.company.id
+          }
+          userId={
+            session.user.id
+          }
+        />
+
+      )}
 
       <div className="space-y-1">
 

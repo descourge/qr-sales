@@ -42,10 +42,6 @@ import {
   useSearchParams,
 } from "next/navigation";
 
-import {
-  ensurePushSubscription,
-} from "@/features/push/services/push-client.service";
-
 
 export default function ChatPage() {
 
@@ -278,17 +274,6 @@ const requestedConversationId =
 
     console.warn(
       "[Push] Intentando registrar dispositivo al abrir Mensajes..."
-    );
-
-    const success =
-      await ensurePushSubscription(
-        companyId,
-        userId
-      );
-
-    console.warn(
-      "[Push] Resultado del registro automático:",
-      success
     );
 
   }
@@ -534,18 +519,6 @@ setSelectedConversation(
   conversation
 );
 
-void ensurePushSubscription(
-  companyId,
-  currentUserId
-).then(success => {
-
-  console.warn(
-    "[Push] Registro al iniciar conversación:",
-    success
-  );
-
-});
-
   } catch (error) {
 
     console.error(
@@ -577,17 +550,6 @@ async function handleSelectConversation(
   try {
     console.warn(
       "[Push] Iniciando registro del dispositivo..."
-    );
-
-    const success =
-      await ensurePushSubscription(
-        session.company.id,
-        session.user.id
-      );
-
-    console.warn(
-      "[Push] Resultado del registro:",
-      success
     );
   } catch (error) {
     console.error(

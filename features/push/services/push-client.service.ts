@@ -245,17 +245,36 @@ export async function subscribeToPushNotifications(
   userId: number
 ): Promise<PushSubscription> {
 
-  console.warn(
-    "[Push] Iniciando registro:",
+  await reportPushDebug(
+    "subscribeToPushNotifications iniciado",
     {
       companyId,
       userId,
     }
   );
 
-  if (
-    !supportsPushNotifications()
-  ) {
+  const supported =
+    supportsPushNotifications();
+
+  await reportPushDebug(
+    "Soporte Push comprobado",
+    {
+      supported,
+      hasServiceWorker:
+        typeof navigator !== "undefined" &&
+        "serviceWorker" in navigator,
+
+      hasPushManager:
+        typeof window !== "undefined" &&
+        "PushManager" in window,
+
+      hasNotification:
+        typeof window !== "undefined" &&
+        "Notification" in window,
+    }
+  );
+
+  if (!supported) {
 
     throw new Error(
       "Este dispositivo no admite Web Push."
@@ -267,9 +286,15 @@ export async function subscribeToPushNotifications(
     process.env
       .NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
-  console.warn(
-    "[Push] Clave VAPID pública disponible:",
-    Boolean(publicKey)
+  await reportPushDebug(
+    "Clave VAPID comprobada",
+    {
+      available:
+        Boolean(publicKey),
+
+      length:
+        publicKey?.length ?? 0,
+    }
   );
 
   if (!publicKey) {
@@ -283,9 +308,11 @@ export async function subscribeToPushNotifications(
   let permission =
     Notification.permission;
 
-  console.warn(
-    "[Push] Permiso actual:",
-    permission
+  await reportPushDebug(
+    "Permiso actual",
+    {
+      permission,
+    }
   );
 
   if (
@@ -293,17 +320,15 @@ export async function subscribeToPushNotifications(
     "default"
   ) {
 
-    console.warn(
-      "[Push] Solicitando permiso..."
-    );
-
     permission =
       await Notification
         .requestPermission();
 
-    console.warn(
-      "[Push] Permiso obtenido:",
-      permission
+    await reportPushDebug(
+      "Permiso solicitado",
+      {
+        permission,
+      }
     );
 
   }
@@ -319,8 +344,29 @@ export async function subscribeToPushNotifications(
 
   }
 
+  await reportPushDebug(
+    "Buscando Service Worker"
+  );
+
   const registration =
     await getActiveServiceWorkerRegistration();
+
+  await reportPushDebug(
+    "Resultado Service Worker",
+    {
+      found:
+        Boolean(registration),
+
+      scope:
+        registration?.scope ??
+        null,
+
+      activeScript:
+        registration?.active
+          ?.scriptURL ??
+        null,
+    }
+  );
 
   if (!registration) {
 
@@ -330,34 +376,23 @@ export async function subscribeToPushNotifications(
 
   }
 
-  console.warn(
-    "[Push] Service Worker activo:",
-    {
-      scope:
-        registration.scope,
-
-      scriptURL:
-        registration.active
-          ?.scriptURL,
-    }
-  );
-
   let subscription =
     await registration
       .pushManager
       .getSubscription();
 
-  console.warn(
-    "[Push] Suscripción existente:",
-    subscription
-      ? subscription.toJSON()
-      : null
+  await reportPushDebug(
+    "Suscripción existente comprobada",
+    {
+      found:
+        Boolean(subscription),
+    }
   );
 
   if (!subscription) {
 
-    console.warn(
-      "[Push] Creando nueva suscripción..."
+    await reportPushDebug(
+      "Creando suscripción Push"
     );
 
     subscription =
@@ -373,12 +408,19 @@ export async function subscribeToPushNotifications(
             ),
         });
 
-    console.warn(
-      "[Push] Nueva suscripción creada:",
-      subscription.toJSON()
+    await reportPushDebug(
+      "Suscripción Push creada",
+      {
+        endpoint:
+          subscription.endpoint,
+      }
     );
 
   }
+
+  await reportPushDebug(
+    "Guardando suscripción en la API"
+  );
 
   await saveSubscription(
     companyId,
@@ -386,8 +428,8 @@ export async function subscribeToPushNotifications(
     subscription
   );
 
-  console.warn(
-    "[Push] Registro completado correctamente."
+  await reportPushDebug(
+    "Suscripción guardada correctamente"
   );
 
   return subscription;
@@ -399,8 +441,12 @@ export async function ensurePushSubscription(
   userId: number
 ): Promise<boolean> {
 
-  console.warn(
-    "[Push] ensurePushSubscription ejecutado."
+  await reportPushDebug(
+    "ensurePushSubscription ejecutado",
+    {
+      companyId,
+      userId,
+    }
   );
 
   try {
@@ -410,13 +456,28 @@ export async function ensurePushSubscription(
       userId
     );
 
-    console.warn(
-      "[Push] Dispositivo registrado."
+    await reportPushDebug(
+      "Registro Push finalizado correctamente"
     );
 
     return true;
 
   } catch (error) {
+
+    await reportPushDebug(
+      "Error registrando Push",
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : String(error),
+
+        name:
+          error instanceof Error
+            ? error.name
+            : null,
+      }
+    );
 
     console.error(
       "[Push] No se pudo registrar el dispositivo:",
@@ -460,5 +521,40 @@ export async function hasPushSubscription():
   );
 
   return subscription !== null;
+
+}
+
+async function reportPushDebug(
+  stage: string,
+  data?: unknown
+): Promise<void> {
+
+  try {
+
+    await fetch(
+      "/api/push/debug",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          stage,
+          data,
+        }),
+      }
+    );
+
+  } catch {
+
+    /*
+     * El diagnóstico nunca debe
+     * interrumpir el registro Push.
+     */
+
+  }
 
 }
